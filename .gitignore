@@ -1,0 +1,8 @@
+/bin/
+/dist/
+/coverage.out
+*.test
+.DS_Store
+/private/
+/runs/
+/graphify-out/

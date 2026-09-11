@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "currency": "USD",
+  "label": "SYNTHETIC demo rates — not a real provider price list",
+  "models": {
+    "demo/model": {
+      "input": 5,
+      "cached_input": 0.5,
+      "cache_write": 6.25,
+      "cache_write_1h": 10,
+      "output": 15
+    }
+  }
+}
