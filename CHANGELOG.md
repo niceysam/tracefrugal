@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Report the installed module version for `go install ...@version` builds, as well as prebuilt release binaries.
+
 ## 0.1.0
 
 Initial release:

@@ -1,6 +1,8 @@
 TraceFrugal checks whether an agent change reduces estimated token cost **per successful task**.
 
-This initial release includes:
+Version 0.1.1 also resolves the installed module version for `go install` builds.
+
+Included features:
 
 - `report`: analyze normalized request-level JSONL with explicit prices.
 - `compare`: fail CI on a cost increase or a newly failed task.

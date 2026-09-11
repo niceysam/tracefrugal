@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 
 	"github.com/niceysam/tracefrugal/internal/ledger"
 )
@@ -38,7 +39,13 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 0
 	}
 	if args[0] == "version" {
-		fmt.Fprintln(stdout, version)
+		resolved := version
+		if resolved == "dev" {
+			if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+				resolved = info.Main.Version
+			}
+		}
+		fmt.Fprintln(stdout, resolved)
 		return 0
 	}
 	if args[0] != "report" && args[0] != "compare" && args[0] != "normalize" {

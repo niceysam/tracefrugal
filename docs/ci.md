@@ -9,7 +9,7 @@ After that evaluator step, use:
   with:
     go-version: '1.23.x'
 - name: Install TraceFrugal
-  run: go install github.com/niceysam/tracefrugal/cmd/tracefrugal@v0.1.0
+  run: go install github.com/niceysam/tracefrugal/cmd/tracefrugal@v0.1.1
 - name: Check cost and task outcomes
   run: |
     tracefrugal compare \
