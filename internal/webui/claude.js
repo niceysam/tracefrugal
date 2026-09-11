@@ -32,6 +32,12 @@ function project(s) { return hideNames ? "Project " + s.id.slice(0,6) : s.projec
 function activeChange() { return state?.changes.slice().reverse().find(c => ["saved","prepared"].includes(c.status)); }
 function render() {
   if (!state) return;
+  // Polling must not erase an unsaved rating or close the hourly graph.
+  const drafts=Array.from(document.querySelectorAll(".rating-control select"))
+    .filter(e=>e.value!==(e.querySelector("[selected]")?.value || ""))
+    .map(e=>[e.id,e.value]);
+  const expanded=Array.from(document.querySelectorAll("#changes-list details")).map(e=>e.open);
+  const focusID=document.activeElement?.id;
   const s = state.summary, total = tokens(s.tokens), input = total-s.tokens.output;
   $("source").textContent = demo ? "Sample workspace" : "Claude Code · local";
   $("source").classList.toggle("demo", demo);
@@ -53,6 +59,9 @@ function render() {
     : `<span class="step">A PRACTICAL EXPERIMENT</span><h2>Try one rule for a day.</h2><p>Start with the biggest observed source below. Rate the answers you get today, add a small context instruction, and compare tomorrow. Undo it if the answers become less useful.</p><p class="small">No model calls are made by TraceFrugal. The baseline is the previous 24 hours, across projects in this Claude config directory.</p>`;
   renderDiagnosis();
   renderChanges();
+  drafts.forEach(([id,value])=>{if($(id))$(id).value=value;});
+  document.querySelectorAll("#changes-list details").forEach((e,i)=>{e.open=expanded[i] || false;});
+  if(focusID && focusID.startsWith("rating-")) $(focusID)?.focus({preventScroll:true});
   const h = state.health;
   $("coverage").textContent = `${number(h.files)} local transcript files · ${number(h.duplicates)} repeated response blocks deduplicated · ${number(h.invalid)} invalid records · ${number(h.partial)} incomplete final lines · ${number(h.unreadable)} unreadable files · ${number(h.conflicts)} conflicting usage snapshots. ` +
     "Incomplete or missing logs can undercount usage. Prices: "+state.price_label+". Special or unknown pricing remains unpriced. Cached tokens are included in processed tokens; this is not context-window occupancy. Prompts and tool outputs are not displayed or uploaded.";
