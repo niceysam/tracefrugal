@@ -9,7 +9,7 @@ After that evaluator step, use:
   with:
     go-version: '1.23.x'
 - name: Install TraceFrugal
-  run: go install github.com/niceysam/tracefrugal/cmd/tracefrugal@v0.1.1
+  run: go install github.com/niceysam/tracefrugal/cmd/tracefrugal@v0.2.0
 - name: Check cost and task outcomes
   run: |
     tracefrugal compare \
@@ -29,6 +29,8 @@ After that evaluator step, use:
 Pin the CLI version to keep accounting behavior stable. Keep the applicable price book in version control with a descriptive label and review price changes explicitly.
 
 Use a trusted baseline artifact from your default branch or a controlled evaluation job. Replacing both baseline and candidate with identical traces can defeat any comparison tool.
+
+Use `--format html > comparison.html` and upload `comparison.html` instead if you prefer an offline visual report. A failed comparison still produces the report.
 
 Do not append `|| true` to the comparison step. Exit `1` means regression and `2` means unusable input.
 

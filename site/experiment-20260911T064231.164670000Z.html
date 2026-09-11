@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TraceFrugal — Agent cost comparison</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#f4f2ec;color:#20241f;font:16px/1.6 Arial,Helvetica,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:40px 24px}header{border-bottom:1px solid #d6d7cb;padding-bottom:24px}
+.brand{font:700 18px monospace;letter-spacing:-.7px}.brand span{color:#d63e1c}h1{font-size:40px;line-height:1.1;letter-spacing:-1.5px;margin:20px 0}
+.summary{color:#62665d;max-width:760px}.badge{display:inline-block;border:1px solid #d63e1c;color:#b22f14;padding:3px 12px;font:700 14px/1.6 monospace}
+.badge.pass{border-color:#2e6943;color:#2e6943}.badge.report{border-color:#62665d;color:#62665d}.delta{font:13px monospace;margin-left:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin:30px 0}.card{background:#faf9f5;border:1px solid #d6d7cb;padding:22px}.card small{color:#62665d}.card strong{display:block;font-size:35px;font-weight:500;letter-spacing:-1px}
+.track{height:12px;background:#e3e5da;margin-top:16px}.bar{height:12px;background:#8ea975}.bar.candidate{background:#d63e1c}
+h2{font-size:23px;letter-spacing:-.5px;margin:32px 0 14px}.table-wrap{overflow:auto;border:1px solid #d6d7cb;background:#faf9f5}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;padding:12px 16px;border-bottom:1px solid #e3e3d9}th{font-weight:600;background:#eaece1}tr:last-child td{border-bottom:0}.regressed{background:#fff0e9}.regressed td:last-child{color:#b22f14;font-weight:700}
+.note{font-size:13px;color:#62665d}.reasons{padding:18px 24px;background:#fff0e9;border-left:3px solid #d63e1c}.reasons ul{margin:8px 0;padding-left:20px}
+.label{font:12px/1.7 monospace;overflow-wrap:anywhere}footer{margin-top:34px;border-top:1px solid #d6d7cb;padding-top:20px;color:#62665d;font-size:12px}
+@media(max-width:600px){h1{font-size:32px}.delta{display:block;margin:12px 0}.card strong{font-size:30px}th,td{padding:10px}}
+@media print{body{background:white}main{padding:0}.card,.table-wrap{break-inside:avoid}h2{break-after:avoid}}
+</style></head><body><main>
+<header><div class="brand"><span>t</span> tracefrugal / offline report</div><h1>Agent cost comparison</h1>
+<span class="badge pass">PASS</span>
+<span class="delta">-40.72% cost per success · allowed increase 0.00%</span>
+<p class="summary">No previously passing task failed, and cost per success stayed within your threshold.</p><p class="label">PRICE BOOK: SYNTHETIC demo rates — not a real provider price list</p></header>
+<div class="cards">
+<div class="card"><small>Baseline · estimated token cost</small><strong>$0.037720</strong><div class="track"><div class="bar" style="width:100%"></div></div></div>
+<div class="card"><small>Candidate · estimated token cost</small><strong>$0.022360</strong><div class="track"><div class="bar candidate" style="width:59.27889713679746%"></div></div></div></div>
+
+<h2>What was counted</h2><div class="table-wrap"><table><thead><tr><th scope="col">Metric</th><th scope="col">Baseline</th><th scope="col">Candidate</th></tr></thead><tbody>
+<tr><th scope="row">Estimated token cost</th><td>$0.037720</td><td>$0.022360</td></tr><tr><th scope="row">Cost per successful task</th><td>$0.018860</td><td>$0.011180</td></tr><tr><th scope="row">Successful tasks</th><td>2 / 2</td><td>2 / 2</td></tr><tr><th scope="row">Tasks without evaluation</th><td>0</td><td>0</td></tr><tr><th scope="row">Model calls</th><td>2</td><td>2</td></tr><tr><th scope="row">Uncached input tokens</th><td>1,000</td><td>1,000</td></tr><tr><th scope="row">Cached input tokens</th><td>4,000</td><td>4,000</td></tr><tr><th scope="row">Default cache-write tokens</th><td>0</td><td>0</td></tr><tr><th scope="row">One-hour cache-write tokens</th><td>0</td><td>0</td></tr><tr><th scope="row">Output tokens</th><td>2,048</td><td>1,024</td></tr>
+</tbody></table></div>
+<p class="note">Cached input is priced separately from uncached input. Cache writes and output use their own rates. These are summed request counts, not context-window occupancy.</p>
+<h2>Did the tasks still pass?</h2><div class="table-wrap"><table><thead><tr><th scope="col">Task</th><th scope="col">Baseline cost</th><th scope="col">Baseline result</th><th scope="col">Candidate cost</th><th scope="col">Result</th></tr></thead><tbody>
+<tr><th scope="row">explain-error</th><td>$0.018860</td><td>Passed</td><td>$0.011180</td><td>Passed</td></tr><tr><th scope="row">extract-fields</th><td>$0.018860</td><td>Passed</td><td>$0.011180</td><td>Passed</td></tr>
+</tbody></table></div>
+<h2>What to try next</h2><ul><li>Cache reads cover 80.0% of recorded input tokens. This is token share, not a request cache-hit rate.</li><li>Output tokens are billed separately. Try a shorter requested answer format, then compare cost and task outcomes before adopting it.</li><li>Start with task &#34;explain-error&#34;: it accounts for 50.0% of estimated token spend across 1 calls. Inspect its inputs and outputs before reducing context.</li><li>Message history, tool schemas and tool results cannot be separated from usage totals alone. This report does not estimate those categories or measure context-window occupancy.</li></ul>
+<h2>How to read this report</h2><p class="note">Cost per successful task = all estimated token spend ÷ successful tasks. Failed-task spend stays in the total. Task results come from the evaluator that produced the trace; TraceFrugal does not independently grade answers.</p>
+<footer>USD estimates from your supplied prices, not an invoice. Excludes tool fees, infrastructure and taxes. A single comparison does not establish statistical significance. This self-contained report loads no external assets and runs no JavaScript.</footer>
+</main></body></html>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="480" viewBox="0 0 1200 480" role="img" aria-labelledby="title desc">
+  <title id="title">TraceFrugal — Fewer tokens. Higher bill?</title>
+  <desc id="desc">Synthetic example: input tokens decrease from 1,020,000 to 400,000 but estimated token cost rises from 66 cents to 2 dollars and 6 cents when cache reuse disappears. TraceFrugal fails the cost regression gate.</desc>
+  <rect width="1200" height="480" rx="12" fill="#f4f2ec"/>
+  <rect x="45" y="38" width="30" height="30" rx="2" fill="#d63e1c"/>
+  <text x="55" y="60" fill="white" font-family="monospace" font-size="25" font-weight="bold">t</text>
+  <text x="88" y="61" font-family="Arial,sans-serif" font-size="23" font-weight="bold" fill="#20241f">tracefrugal / OSS</text>
+  <text x="45" y="147" fill="#62665d" font-family="monospace" font-size="14" letter-spacing="2">AI AGENT COST REGRESSION TESTING</text>
+  <text x="42" y="228" fill="#20241f" font-family="Arial,sans-serif" font-size="69" font-weight="bold" letter-spacing="-3">Fewer tokens.</text>
+  <text x="42" y="306" fill="#d63e1c" font-family="Arial,sans-serif" font-size="69" font-weight="bold" letter-spacing="-3">Higher bill?</text>
+  <text x="45" y="360" fill="#62665d" font-family="Arial,sans-serif" font-size="20">Catch cost and task-outcome regressions in CI.</text>
+  <text x="45" y="418" fill="#62665d" font-family="monospace" font-size="14">LOCAL GO CLI · NO API KEY · MIT</text>
+  <rect x="637" y="78" width="515" height="330" rx="8" fill="#dedfd2"/>
+  <rect x="625" y="66" width="515" height="330" rx="8" fill="#20241f"/>
+  <text x="654" y="108" fill="#bdcd9f" font-family="monospace" font-size="17">$ tracefrugal compare …</text>
+  <path d="M654 132H1110" stroke="#606755"/>
+  <text x="654" y="169" fill="#b8bdad" font-family="monospace" font-size="13">INPUT TOKENS</text>
+  <text x="958" y="169" fill="#b8bdad" font-family="monospace" font-size="13">TOKEN COST</text>
+  <text x="654" y="207" fill="#eeeede" font-family="monospace" font-size="18">1,020,000 → 400,000</text>
+  <text x="958" y="207" fill="#ff997f" font-family="monospace" font-size="17">$0.66 → $2.06</text>
+  <text x="654" y="242" fill="#bdcd9f" font-family="monospace" font-size="23">−60.8%</text>
+  <text x="958" y="242" fill="#ff997f" font-family="monospace" font-size="23">+212.1%</text>
+  <path d="M654 267H1110" stroke="#606755"/>
+  <text x="654" y="307" fill="#ff997f" font-family="monospace" font-size="23" font-weight="bold">FAIL / EXIT 1</text>
+  <text x="654" y="341" fill="#b8bdad" font-family="monospace" font-size="13">Same tasks. Same success. Cache lost.</text>
+  <text x="654" y="372" fill="#b8bdad" font-family="monospace" font-size="11">Synthetic example · hypothetical prices</text>
+</svg>

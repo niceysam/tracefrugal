@@ -36,7 +36,7 @@ These are suggestions for **your evaluator**, not built-in TraceFrugal graders.
 
 Cache conditions can dominate results. Compare warm against warm and cold against cold, or publish both. Do not warm only the optimized run. Record request ordering and idle gaps where they affect cache eligibility.
 
-Repeat nondeterministic tasks. Report the number of repetitions and distributions. For repeated cases, use IDs such as `invoice-001/rep-01` consistently across runs. v0.1 does not compute confidence intervals or account for correlation.
+Repeat nondeterministic tasks. Report the number of repetitions and distributions. For repeated cases, use IDs such as `invoice-001/rep-01` consistently across runs. TraceFrugal does not compute confidence intervals or account for correlation.
 
 ## Gate policy
 
@@ -50,7 +50,7 @@ A comparison fails if:
 
 Missing outcomes, unmatched task sets, unsupported token fields, or missing prices are input errors, not regression findings. Error exit code 2 fails a normal CI step just as exit code 1 does.
 
-A lower cost per success does not prove every individual task became cheaper. Inspect the task-level report. Per-task cost thresholds are not part of v0.1.
+A lower cost per success does not prove every individual task became cheaper. Inspect the task-level report. Per-task cost thresholds are not implemented.
 
 ## Limits of the number
 

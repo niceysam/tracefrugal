@@ -1,0 +1,9 @@
+{
+  "baseline_profile": "base.json",
+  "output_token_factor": 0.5,
+  "min_output_tokens": 64,
+  "prices": "../prices.json",
+  "command": ["python3", "evaluate_demo.py"],
+  "timeout_seconds": 30,
+  "auto_apply": true
+}

@@ -1,5 +1,5 @@
-<h1 align="center">TraceFrugal</h1>
-<p align="center"><strong>Fewer tokens. Higher bill? Catch it before you ship.</strong></p>
+[![TraceFrugal — Fewer tokens. Higher bill?](assets/hero.svg)](https://niceysam.github.io/tracefrugal/)
+<p align="center"><a href="https://niceysam.github.io/tracefrugal/"><strong>Interactive demo</strong></a> · <a href="https://niceysam.github.io/tracefrugal/example-history.html"><strong>Optimization history</strong></a> · <a href="https://niceysam.github.io/tracefrugal/example-report.html"><strong>HTML report</strong></a> · <a href="https://github.com/niceysam/tracefrugal/releases/latest">Download</a> · <a href="docs/providers.md">Provider support</a></p>
 <p align="center">
   <a href="https://github.com/niceysam/tracefrugal/actions/workflows/ci.yml"><img src="https://github.com/niceysam/tracefrugal/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/niceysam/tracefrugal/releases"><img src="https://img.shields.io/github/v/release/niceysam/tracefrugal" alt="Release"></a>
@@ -7,9 +7,40 @@
   <img src="https://img.shields.io/badge/Go-1.23%2B-00ADD8.svg" alt="Go 1.23+">
 </p>
 
-TraceFrugal is a local CLI that checks whether a change to your AI agent actually reduces **estimated token cost per successful task**. It distinguishes cached input from new input and fails CI when costs rise or a previously passing task fails.
+**See where your AI tokens go. Reduce cost. Verify quality.**
 
-**One Go binary. No runtime dependencies. No API key. No network calls.**
+TraceFrugal shows your recorded usage in a local dashboard, suggests optimization experiments, and checks whether changes reduce **estimated token cost per successful task**. It distinguishes cached input from new input and fails CI when costs rise or a previously passing task fails.
+
+**One Go binary. No runtime dependencies. No API key. No outbound network calls.**
+
+## Watch your own usage
+
+Connect the [SDK recorder](examples/record_usage.py) to your OpenAI Responses or Anthropic Messages application, supply your model prices, then run:
+
+```sh
+tracefrugal serve --trace run.jsonl --prices prices.json
+```
+
+Open **http://127.0.0.1:8765/** for token categories, estimated spend, cache usage, expensive tasks and suggested next experiments. The page refreshes every three seconds.
+
+[Connection walkthrough and limitations →](docs/live-dashboard.md)
+
+This requires instrumentation in your application. It does not automatically attach to Claude Code, Codex, ChatGPT or Claude Desktop. Usage totals alone cannot separate tool schemas from conversation history.
+
+## Try, apply, or roll back an optimization
+
+```sh
+tracefrugal experiment --config examples/experiment/experiment.json --state runs/demo
+tracefrugal serve --state runs/demo
+```
+
+The included synthetic demo needs Python 3 and makes no model calls. The experiment runner generates a smaller output cap, evaluates it, and updates a managed profile only if cost per success falls without new task failures. HTML history records each decision and provides the rollback command. Rollback pauses automation.
+
+For real apps, connect an evaluator and make your app consume the active profile. Use `--every 1h --max-runs 24` for recurring evaluations. API evaluations incur their own costs.
+
+[Automatic experiments, hourly results and rollback →](docs/experiments.md)
+
+**Prefer a visual report?** [Open the example](https://niceysam.github.io/tracefrugal/example-report.html): costs side by side, plain-English reasons, and each task's result. Reports are a single offline HTML file.
 
 ## Why token counts can mislead
 
@@ -104,7 +135,33 @@ Supply an explicit price book in **USD per million tokens**:
 
 An unknown model or a missing rate for a **used** token category is an error. Free usage requires an explicit `0` rate. There are no silently guessed provider prices.
 
-For long-context, regional, batch, or contracted rates, use separate model keys such as `provider/model@long-context` and map each request to the applicable rate class yourself. v0.1 does not infer pricing tiers.
+For long-context, regional, batch, or contracted rates, use separate model keys such as `provider/model@long-context` and map each request to the applicable rate class yourself. TraceFrugal does not infer pricing tiers.
+
+## Open a report in your browser
+
+```sh
+tracefrugal compare \
+  --baseline examples/baseline.jsonl \
+  --candidate examples/candidate-cache-miss.jsonl \
+  --prices examples/prices.json \
+  --format html > comparison.html
+```
+
+Open `comparison.html` in any browser. The intentionally failing comparison still writes a complete report and exits `1`. For a single run, use `report --format html`.
+
+The report answers three questions: **What did we spend? Why did the gate fail? Which tasks stopped passing?** It embeds all styling, uses no JavaScript, and loads no external assets.
+
+## Does it work with my model?
+
+| Your input | Support |
+|---|---|
+| OpenAI Responses final JSON | Automatic usage normalization |
+| Anthropic Messages final JSON | Automatic usage normalization |
+| Any provider in TraceFrugal JSONL | Common accounting and reporting |
+| Gemini, Bedrock Converse, Ollama raw responses | Convert to the common format yourself |
+| Claude Code / Codex native session logs | No native importer yet |
+
+**An agent app and a model provider are different things.** Using Claude Code does not mean its session log is an Anthropic Messages response. See [the compatibility guide](docs/providers.md).
 
 ### Normalize a provider response
 
@@ -119,7 +176,7 @@ tracefrugal normalize \
 
 `--provider anthropic` accepts Anthropic Messages usage. `--response -` reads stdin. Add the independently evaluated `task_result` event before comparison.
 
-**Adapter boundaries:** OpenAI Responses cache reads and `cache_write_tokens` are supported. Anthropic nonzero cache writes require an explicit 5-minute/1-hour breakdown. Streaming events, Chat Completions, and native Claude Code/Codex session logs are not imported in v0.1. See [the format and adapter contract](docs/format.md).
+**Adapter boundaries:** OpenAI Responses cache reads and `cache_write_tokens` are supported. Anthropic nonzero cache writes require an explicit 5-minute/1-hour breakdown. Streaming events, Chat Completions, and native Claude Code/Codex session logs are not imported. See [the format and adapter contract](docs/format.md).
 
 ## Put it in CI
 
@@ -160,7 +217,7 @@ Failed-task spend stays in the numerator. Reasoning tokens already included in a
 
 `report --format json` also includes each task's cost, request count, outcome, and summed request duration when provided. Summed request durations are **not wall-clock latency** when calls overlap.
 
-This is accounting and a deterministic policy gate, **not** an automatic correctness grader, compressor, invoice reconciler, statistical significance test, or agent runner. It cannot verify that your trace captured every billed request.
+The experiment runner executes your evaluator and can activate a managed configuration. It does not grade correctness itself, compress context, reconcile invoices, or compute statistical significance. It cannot verify that your trace captured every billed request or that your application consumed the profile.
 
 ## How it fits
 
@@ -180,7 +237,7 @@ TraceFrugal's narrow job is to apply the **same explicit cost and task-outcome c
 - Repeat stochastic tasks. A single pair of runs is not proof of a general improvement.
 - Missing outcomes are displayed as unknown by `report`; `compare` rejects them.
 - USD computations use IEEE 754 floating point. This tool is not a financial settlement system.
-- v0.1 is a small foundation. Native session-log import, built-in graders, and automated experiment execution are not shipped features.
+- Native session-log import and built-in graders are not shipped features. Automatic experiments require your evaluator and profile integration.
 
 Read [measurement methodology](docs/methodology.md) before publishing savings claims.
 
