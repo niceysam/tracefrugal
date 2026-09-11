@@ -73,8 +73,9 @@ and outcomes, passing `trace=os.environ["TRACEFRUGAL_TRACE"]`.
 
 Your real application must separately read `STATE/active.json` before requests
 for an activated profile to affect live behavior. TraceFrugal only writes that
-managed file. Native Claude Code, Codex, ChatGPT and Claude Desktop are not
-automatically connected.
+managed file. Claude Code has a separate [native usage and context-trial
+workflow](claude-code.md), without this task-quality gate. Codex, ChatGPT and
+Claude Desktop are not automatically connected.
 
 ## Configuration
 

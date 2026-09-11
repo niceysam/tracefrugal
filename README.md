@@ -1,6 +1,6 @@
 # TraceFrugal
 
-### See your AI costs. Try a change. Undo it.
+### Understand large AI inputs. Try smaller context. Keep useful answers.
 
 <p><a href="https://niceysam.github.io/tracefrugal/"><strong>Open the dashboard →</strong></a> · <a href="https://github.com/niceysam/tracefrugal/releases/latest">Download the local app</a> · <a href="docs/providers.md">Provider support</a></p>
 <p align="center">
@@ -10,41 +10,75 @@
   <img src="https://img.shields.io/badge/Go-1.23%2B-00ADD8.svg" alt="Go 1.23+">
 </p>
 
-**See where your AI tokens go. Reduce cost. Verify quality.**
+**Run `tracefrugal`. Your browser opens. Your own sessions appear.**
 
-TraceFrugal shows your recorded usage in a local dashboard, suggests optimization experiments, and checks whether changes reduce **estimated token cost per successful task**. It distinguishes cached input from new input and fails CI when costs rise or a previously passing task fails.
+TraceFrugal shows why your Claude Code workflow may process so much input:
+large tool results, repeated calls, and context reused across responses.
+Try a small context rule for a day, compare tokens **and your answer satisfaction**,
+then keep it or undo it. You don't need recorder code or a different LLM.
 
-**One Go binary. No runtime dependencies. No API key. No outbound network calls.**
+**One Go binary. No runtime dependencies. No API key. No telemetry.**
 
-## Try it in your browser
+## See it before installing
 
 **[Open the interactive dashboard](https://niceysam.github.io/tracefrugal/)** — no install, sign-up, or API key.
 
-1. See costs and token categories in the graphs.
-2. Click **Try optimization**. A simulated trial updates the cost, checks, and history.
-3. Click it again to see a cheaper candidate rejected when quality fails.
-4. Click **Undo last change** to restore the previous setting and pause trials.
+1. See input vs. output, cache reuse, and the largest observed tool results.
+2. Preview an MCP, tool-result, or fewer-round-trips recommendation.
+3. Rate your current answers, simulate a 24-hour trial, then compare and undo.
 
 The public demo uses synthetic data. It does not connect to an AI account or generate actual savings.
-**Use my data** opens a report file locally in your browser or guides you through connecting an API application.
 
-[![TraceFrugal dashboard with cost trend, token breakdown, and optimization controls](assets/demo-dashboard.png)](https://niceysam.github.io/tracefrugal/)
+[![Claude Code dashboard: input, output, cache reuse, tool-result sources, and context recommendations](assets/claude-dashboard.png)](https://niceysam.github.io/tracefrugal/)
 
-## Run the local app
+## Get your own graph
 
 [Download the binary for your system](https://github.com/niceysam/tracefrugal/releases/latest), extract it, and run:
 
 ```sh
-./tracefrugal demo
+./tracefrugal
 ```
 
-On Windows, use `.\tracefrugal.exe demo`. Open **http://127.0.0.1:8765/**.
-No config, Python, Git clone, or API account is needed for this demo.
-It simulates two successful optimizations and a rejected one. Click **Undo last change**, then **Restore & pause** to try rollback. **Allow experiments again** clears the pause. Only demo files change.
+On Windows, use `.\tracefrugal.exe`. The browser opens automatically.
+Choose `darwin_arm64` for Apple Silicon Macs, `darwin_amd64` for Intel Macs,
+or the corresponding Windows/Linux architecture. Keep the terminal running.
 
-Ready for real usage? Follow the [API connection walkthrough](docs/live-dashboard.md).
+TraceFrugal finds `~/.claude/projects` (or `CLAUDE_CONFIG_DIR`), removes repeated
+response blocks, and displays the last seven days. It refreshes every 30 seconds.
+An optional trial adds one clearly previewed instruction file after confirmation.
 
-## Watch your own usage
+**[Two-step setup, supported sources, pricing limits, and rollback →](https://github.com/niceysam/tracefrugal/blob/main/docs/claude-code.md)**
+
+No local logs yet? The app explains how to start. macOS may ask you to approve
+the downloaded binary in Privacy & Security; releases are not notarized.
+
+## What you can do
+
+| Your question | In TraceFrugal |
+|---|---|
+| Where did my usage go? | 24-hour, 7-day, and 30-day graphs; session sorting |
+| Is this conversation growing expensive? | Select the session; inspect request input, cache reads, and output |
+| Why is input huge when output is small? | Per-response input/output, cache explanation, tool-result byte sources, repeated calls |
+| What can I change about MCP or tools? | Three concrete, previewable context rules; no model or effort changes |
+| Did it help over a day? | Previous 24 hours vs. next 24 hours; hourly graph; input and cost per response; input and responses per user turn |
+| Were the answers still useful? | Your before/after answer and reasoning satisfaction, rated 1–5 |
+| Can I go back? | Remove the trial rule, with external-edit protection; history stays |
+
+**Honest boundaries:** dollars are dated list-price estimates, not subscription
+bills. Unknown pricing stays visibly unpriced. A lower hourly total is not proof
+of savings: the work and its quality may have changed. Tool-result bytes are
+**not input-token attribution**; logs do not expose exact schema/memory shares.
+Rules guide Claude's behavior, not enforce it. Confirm loading with `/context`
+in a fresh session. The rule stays active until removed. Native trials do not
+automatically grade answers or guarantee savings.
+
+[![A synthetic trial: lower input but lower satisfaction, with before/after graphs and undo](assets/context-trial.png)](https://niceysam.github.io/tracefrugal/)
+
+## For API application developers
+
+The provider-independent recorder, cost-per-success regression gate, and
+automatic evaluator-driven experiments remain available. These are a separate
+workflow from the native Claude Code dashboard.
 
 Connect the [SDK recorder](examples/record_usage.py) to your OpenAI Responses or Anthropic Messages application, supply your model prices, then run:
 
@@ -56,7 +90,9 @@ Open **http://127.0.0.1:8765/** for token and task-cost charts, estimated spend,
 
 [Connection walkthrough and limitations →](docs/live-dashboard.md)
 
-This requires instrumentation in your application. It does not automatically attach to Claude Code, Codex, ChatGPT or Claude Desktop. Usage totals alone cannot separate tool schemas from conversation history.
+This API workflow requires instrumentation. Claude Code uses the separate native
+importer above. Codex, ChatGPT and Claude Desktop do not have native importers.
+Usage totals alone cannot separate tool schemas from conversation history.
 
 ## Try, apply, or roll back an optimization
 
@@ -190,7 +226,8 @@ The report answers three questions: **What did we spend? Why did the gate fail? 
 | Anthropic Messages final JSON | Automatic usage normalization |
 | Any provider in TraceFrugal JSONL | Common accounting and reporting |
 | Gemini, Bedrock Converse, Ollama raw responses | Convert to the common format yourself |
-| Claude Code / Codex native session logs | No native importer yet |
+| Claude Code local session logs | `tracefrugal` or `tracefrugal claude`: automatic discovery, deduplication and graphs |
+| Codex native session logs | No native importer yet |
 
 **An agent app and a model provider are different things.** Using Claude Code does not mean its session log is an Anthropic Messages response. See [the compatibility guide](docs/providers.md).
 
@@ -207,7 +244,7 @@ tracefrugal normalize \
 
 `--provider anthropic` accepts Anthropic Messages usage. `--response -` reads stdin. Add the independently evaluated `task_result` event before comparison.
 
-**Adapter boundaries:** OpenAI Responses cache reads and `cache_write_tokens` are supported. Anthropic nonzero cache writes require an explicit 5-minute/1-hour breakdown. Streaming events, Chat Completions, and native Claude Code/Codex session logs are not imported. See [the format and adapter contract](docs/format.md).
+**API adapter boundaries:** OpenAI Responses cache reads and `cache_write_tokens` are supported. Anthropic nonzero cache writes require an explicit 5-minute/1-hour breakdown. Streaming events, Chat Completions, and Codex session logs are not imported. The separate [Claude Code importer](docs/claude-code.md) handles repeated local transcript snapshots. See [the format and adapter contract](docs/format.md).
 
 ## Put it in CI
 

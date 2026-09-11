@@ -42,3 +42,5 @@ jobs:
         run: python3 scripts/build-site.py --check
       - name: Check dashboard JavaScript
         run: node scripts/test-dashboard.cjs
+      - name: Check native Claude dashboard with Go import
+        run: node scripts/test-claude-dashboard.cjs

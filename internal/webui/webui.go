@@ -8,10 +8,11 @@ import (
 	"net/http"
 )
 
-//go:embed index.html dashboard.css dashboard.js favicon.svg
+//go:embed index.html claude.html dashboard.css dashboard.js claude.js claude.css favicon.svg
 var files embed.FS
 
 var page = template.Must(template.ParseFS(files, "index.html"))
+var claudePage = template.Must(template.ParseFS(files, "claude.html"))
 
 type Options struct {
 	Mode  string `json:"mode"`
@@ -22,18 +23,22 @@ func Write(w io.Writer, options Options) error {
 	return page.Execute(w, options)
 }
 
+func WriteClaude(w io.Writer, options Options) error {
+	return claudePage.Execute(w, options)
+}
+
 func Asset(w http.ResponseWriter, r *http.Request) bool {
 	name := r.URL.Path
-	if name != "/dashboard.css" && name != "/dashboard.js" && name != "/favicon.svg" {
+	if name != "/dashboard.css" && name != "/dashboard.js" && name != "/claude.js" && name != "/claude.css" && name != "/favicon.svg" {
 		return false
 	}
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return true
 	}
-	if name == "/dashboard.js" {
+	if name == "/dashboard.js" || name == "/claude.js" {
 		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
-	} else if name == "/dashboard.css" {
+	} else if name == "/dashboard.css" || name == "/claude.css" {
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
 	} else {
 		w.Header().Set("Content-Type", "image/svg+xml")

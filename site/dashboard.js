@@ -294,8 +294,8 @@ function validateReport(r) {
 }
 const guides = {
   openai:"Supported: final Responses API usage. Add the usage recorder to your application and supply your model prices. This does not connect to the ChatGPT subscription interface.",
-  anthropic:"Supported: final Messages API usage, including separate cache reads and cache writes. Add the usage recorder to your application. This does not attach to Claude Desktop or Claude Code sessions.",
-  other:"Other providers can write the normalized TraceFrugal JSONL format. Native Codex / Claude Code sessions and subscription billing are not automatically imported."
+  anthropic:"Supported: final Messages API usage, including separate cache reads and cache writes. For local Claude Code logs, run tracefrugal with no arguments to open the native dashboard.",
+  other:"Other providers can write the normalized TraceFrugal JSONL format. Claude Code has a native local dashboard: run tracefrugal. Codex sessions and subscription bills are not imported."
 };
 function provider(name) {
   $("provider-guide").textContent = guides[name];

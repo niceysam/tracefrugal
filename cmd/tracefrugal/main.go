@@ -17,6 +17,9 @@ var version = "dev"
 const help = `TraceFrugal — fewer tokens is not always a cheaper agent.
 
 Usage:
+  tracefrugal                         Open your local Claude Code dashboard
+  tracefrugal claude [--no-open] [--days 7] [--port 8765]
+  tracefrugal claude --json            Export observed Claude Code usage
   tracefrugal demo [--port 8765]
   tracefrugal report --trace run.jsonl --prices prices.json [--format text|json|html]
   tracefrugal compare --baseline before.jsonl --candidate after.jsonl --prices prices.json [--max-increase 5] [--format text|json|html]
@@ -29,7 +32,8 @@ Usage:
   tracefrugal version
 
 Use "-" as an input path to read stdin (one input only).
-Prices are explicit USD per million tokens. No built-in price guesses.
+Claude Code uses dated list-price estimates for recognized models.
+API reports require an explicit price book. Estimates are not invoices.
 Exit codes: 0 success, 1 regression, 2 invalid input or usage.
 `
 
@@ -40,7 +44,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "tracefrugal:", err)
 		return 2
 	}
-	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
+	if len(args) == 0 {
+		return claudeCommand(nil, stdout, stderr)
+	}
+	if args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
 		fmt.Fprint(stdout, help)
 		return 0
 	}
@@ -56,6 +63,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	if args[0] == "serve" {
 		return serve(args[1:], stderr)
+	}
+	if args[0] == "claude" {
+		return claudeCommand(args[1:], stdout, stderr)
 	}
 	if args[0] == "demo" {
 		return demo(args[1:], stdout, stderr)

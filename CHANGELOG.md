@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0
+
+- Open a native Claude Code dashboard by running `tracefrugal` without arguments.
+- Discover local usage, deduplicate cumulative response blocks, and show real
+  time/session token graphs without a recorder or API key.
+- Keep unknown pricing visibly unpriced; use dated standard list estimates for
+  recognized public model IDs.
+- Diagnose input/output imbalance, cache reuse, tool-result byte sources, and
+  repeated calls without retaining their contents.
+- Add previewable MCP, tool-output, and round-trip context rules, prior/next
+  24-hour comparisons, hourly graphs, answer satisfaction, and guarded undo.
+- Publish a Claude-focused interactive demo and a two-step English setup guide.
+- Preserve the API/evaluator workflow separately at `experiments.html`.
+
 ## 0.4.0
 
 - Visual dashboard shared by the public website and the Go binary: evaluation cost trend, token ring chart, task-cost bars, and outcome cards.

@@ -78,7 +78,8 @@ No savings or quality improvement is claimed until your experiment shows it.
 | OpenAI Responses API | Recorder + normalizer |
 | Anthropic Messages API | Recorder + normalizer |
 | Other providers | Emit the documented normalized JSONL and supply prices |
-| Claude Code / Codex native session logs | No automatic importer yet |
+| Claude Code local session logs | Native dashboard: run `tracefrugal`; see [guide](claude-code.md) |
+| Codex native session logs | No automatic importer yet |
 | ChatGPT / Claude subscription UI | No integration or invoice inference |
 
 The accounting engine is shared; collection formats are provider-specific.

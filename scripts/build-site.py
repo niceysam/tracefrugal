@@ -6,11 +6,13 @@ root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
 parser.add_argument("--check", action="store_true")
 args = parser.parse_args()
-for name in ("index.html", "dashboard.js", "dashboard.css", "favicon.svg"):
+for name in ("index.html", "claude.html", "claude.js", "claude.css", "dashboard.js", "dashboard.css", "favicon.svg"):
     data = (root / "internal" / "webui" / name).read_text()
     if name == "index.html":
         data = data.replace("{{.}}", '{"mode":"demo"}')
-    destination = root / "site" / name
+    if name == "claude.html":
+        data = data.replace("{{.}}", '{"mode":"claude-demo"}')
+    destination = root / "site" / ("experiments.html" if name == "index.html" else "index.html" if name == "claude.html" else name)
     if args.check:
         if not destination.exists() or destination.read_text() != data:
             raise SystemExit(f"Stale site asset: {name}. Run python3 scripts/build-site.py")

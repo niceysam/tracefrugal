@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="See AI token costs, try an optimization, and undo a change. A visual, local-first dashboard with an interactive demo.">
+  <meta name="theme-color" content="#f5f7fa">
+  <title>TraceFrugal — Your AI cost cockpit</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="dashboard.css">
+  <script id="bootstrap" type="application/json">{"mode":"demo"}</script>
+  <script src="dashboard.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to dashboard</a>
+<header class="topbar">
+  <a class="brand" href="./"><span class="logo" aria-hidden="true">t↘</span>TraceFrugal</a>
+  <div class="top-actions"><span id="source-badge" class="pill">Loading</span><a href="https://github.com/niceysam/tracefrugal" target="_blank" rel="noreferrer">GitHub ↗</a></div>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <p class="nav-label">YOUR WORKSPACE</p>
+    <nav aria-label="Dashboard">
+      <button data-view="overview" aria-current="page"><span aria-hidden="true">◫</span> Overview</button>
+      <button data-view="history"><span aria-hidden="true">↺</span> Change history <span id="history-count" class="count">0</span></button>
+      <button data-view="connect"><span aria-hidden="true">＋</span> Use my data</button>
+    </nav>
+    <div class="sidebar-note"><strong>Spend less.<br>Keep what works.</strong><p>Test a change, check the result, and keep control.</p><a href="https://github.com/niceysam/tracefrugal/releases/latest" target="_blank" rel="noreferrer">Get the local app ↗</a></div>
+    <div class="sidebar-foot">OPEN SOURCE · MIT<br>Go core. Your data stays yours.</div>
+  </aside>
+  <main id="main" tabindex="-1">
+    <div id="notice" class="notice" role="status" aria-live="polite"></div>
+    <section id="overview" class="view">
+      <div class="page-heading"><div><p class="eyebrow">OVERVIEW</p><h1>Your AI costs, at a glance.</h1><p id="subtitle">See what changed. Decide what to keep.</p></div><div id="quick-action"></div></div>
+      <div id="demo-banner" class="demo-banner" hidden><span><strong>Interactive demo</strong> · Sample data. No account or installation needed.</span><button id="reset" class="text-button">Reset demo ↺</button></div>
+      <div id="metrics" class="metrics"></div>
+      <div class="chart-grid">
+        <article class="panel trend-panel">
+          <div class="panel-heading"><div><h2 id="trend-title">Cost over experiments</h2><p id="trend-caption">Each point is an evaluation of the same sample tasks.</p></div><span class="unit">USD / evaluation</span></div>
+          <div id="trend" class="chart"></div>
+          <div id="trend-legend" class="legend"><span><i class="dot green"></i>Baseline / applied</span><span><i class="dot red"></i>Rejected</span><span><i class="dot blue"></i>Restored</span></div>
+          <details class="chart-data"><summary>Read chart values</summary><div id="chart-table" class="table-wrap"></div></details>
+        </article>
+        <article class="panel token-panel">
+          <div class="panel-heading"><div><h2>Where tokens go</h2><p id="token-caption">Latest evaluation of the active settings</p></div></div>
+          <div id="tokens"></div>
+        </article>
+      </div>
+      <article id="next-action" class="action-card"></article>
+      <div class="section-heading"><h2>Recent changes</h2><button class="text-button" data-view="history">View all history →</button></div>
+      <div id="recent"></div>
+      <p class="footnote" id="scope-note"></p>
+    </section>
+    <section id="history" class="view" hidden>
+      <div class="page-heading"><div><p class="eyebrow">CHANGE HISTORY</p><h1>Every decision has a trail.</h1><p>Applied changes, rejected trials, and rollbacks stay in one place.</p></div></div>
+      <div id="history-summary"></div>
+      <div id="history-list"></div>
+    </section>
+    <section id="connect" class="view" hidden>
+      <div class="page-heading"><div><p class="eyebrow">USE MY DATA</p><h1>Start with what you have.</h1><p>Choose a file to explore, or connect an application for ongoing use.</p></div></div>
+      <div class="connect-grid">
+        <article class="panel">
+          <span class="step">01 · NO INSTALLATION</span><h2>Open a usage report</h2>
+          <p>Already have a TraceFrugal JSON report? Open it here to see your costs and token breakdown. The file is read in your browser and is never uploaded.</p>
+          <label class="upload" for="report-file"><span aria-hidden="true">↥</span><strong>Choose a report</strong><small>TraceFrugal report JSON · up to 4 MB</small></label>
+          <input id="report-file" type="file" accept=".json,application/json">
+          <p id="import-message" role="status"></p>
+          <details><summary>How do I make this report?</summary><p>With recorded usage and your model prices:</p><pre>tracefrugal report --trace run.jsonl --prices prices.json --format json &gt; report.json</pre><p>Export a report, not raw prompts or API credentials.</p><a href="https://github.com/niceysam/tracefrugal/blob/main/docs/live-dashboard.md">Set up usage recording →</a></details>
+        </article>
+        <article class="panel">
+          <span class="step">02 · ONGOING USE</span><h2>Connect an AI application</h2>
+          <p>Record the usage returned by your API. The local app refreshes the dashboard as requests arrive.</p>
+          <div class="providers" role="group" aria-label="Choose a source"><button class="provider" data-provider="openai" aria-pressed="true">OpenAI</button><button class="provider" data-provider="anthropic" aria-pressed="false">Anthropic</button><button class="provider" data-provider="other" aria-pressed="false">Other / CLI</button></div>
+          <div id="provider-guide"></div>
+          <a class="primary link-button" href="https://github.com/niceysam/tracefrugal/blob/main/docs/live-dashboard.md" target="_blank" rel="noreferrer">Open the connection guide ↗</a>
+        </article>
+      </div>
+      <article class="panel connect-footer"><h2>Want automatic optimization?</h2><p>Connect a task evaluator and have your application read the managed settings. TraceFrugal tests a candidate, checks cost per successful task, and only applies it if the configured checks pass. The dashboard shows results and offers rollback. A browser report alone cannot change your application.</p><a href="https://github.com/niceysam/tracefrugal/blob/main/docs/experiments.md" target="_blank" rel="noreferrer">Set up automatic trials and hourly evaluations →</a></article>
+    </section>
+    <noscript>This dashboard needs JavaScript. Offline HTML reports are available from the TraceFrugal CLI.</noscript>
+  </main>
+</div>
+<dialog id="undo-dialog">
+  <form method="dialog"><button class="close" aria-label="Close">×</button></form>
+  <span class="step">YOU ARE IN CONTROL</span><h2>Restore the previous settings?</h2><p id="undo-description"></p><p>Future experiments pause. Recorded usage, costs, and history are kept.</p>
+  <div class="dialog-actions"><button id="cancel-undo" class="secondary">Keep current settings</button><button id="confirm-undo" class="primary">Restore &amp; pause</button></div>
+</dialog>
+</body></html>
