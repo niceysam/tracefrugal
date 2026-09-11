@@ -50,7 +50,7 @@ Missing prices are errors. These are estimates, not subscription invoices.
 tracefrugal serve --trace run.jsonl --prices prices.json
 ```
 
-Open **http://127.0.0.1:8765/**. It refreshes every three seconds and binds only
+Open **http://127.0.0.1:8765/**. Its charts update every three seconds without reloading the page. It binds only
 to local IPv4 loopback. No cloud account, upload or telemetry is involved.
 The server rereads the complete file; use a fresh trace per run. This initial
 implementation is intended for bounded runs, not indefinite log retention.

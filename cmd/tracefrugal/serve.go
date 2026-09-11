@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/hex"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -17,17 +18,19 @@ import (
 
 	"github.com/niceysam/tracefrugal/internal/experiment"
 	"github.com/niceysam/tracefrugal/internal/ledger"
+	"github.com/niceysam/tracefrugal/internal/webui"
 )
 
-// dashboard rereads the files on each refresh. A partially appended JSONL line
+const dashboardCSP = "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'none'"
+
+// dashboard rereads the files on each poll. A partially appended JSONL line
 // fails validation rather than showing a plausible but incomplete cost total.
 func dashboard(trace, prices string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'")
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
+		w.Header().Set("Content-Security-Policy", dashboardCSP)
+		if webui.Asset(w, r) {
 			return
 		}
 		if r.Method != http.MethodGet {
@@ -35,7 +38,15 @@ func dashboard(trace, prices string) http.Handler {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		w.Header().Set("Refresh", "3")
+		if r.URL.Path == "/" {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			webui.Write(w, webui.Options{Mode: "usage"})
+			return
+		}
+		if r.URL.Path != "/api/state" {
+			http.NotFound(w, r)
+			return
+		}
 		pf, err := os.Open(prices)
 		if err != nil {
 			http.Error(w, "Price book unavailable. Check the configured file.", 503)
@@ -58,13 +69,11 @@ func dashboard(trace, prices string) http.Handler {
 			http.Error(w, "Trace is incomplete or invalid, or a model has no price. Retrying in 3 seconds. Run tracefrugal report for details.", 422)
 			return
 		}
-		var body bytes.Buffer
-		if err := ledger.WriteReportHTML(&body, report); err != nil {
-			http.Error(w, "Could not render report", 500)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write(body.Bytes())
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(struct {
+			Report  ledger.Report      `json:"report"`
+			Entries []experiment.Entry `json:"entries"`
+		}{report, []experiment.Entry{}})
 	})
 }
 
@@ -77,10 +86,13 @@ func historyDashboard(state string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; form-action 'self'")
+		w.Header().Set("Content-Security-Policy", dashboardCSP)
 		host, _, err := net.SplitHostPort(r.Host)
 		if err != nil || (host != "127.0.0.1" && host != "localhost") {
 			http.Error(w, "Local host required", 403)
+			return
+		}
+		if webui.Asset(w, r) {
 			return
 		}
 		if r.Method == http.MethodPost && (r.URL.Path == "/rollback" || r.URL.Path == "/resume") {
@@ -108,13 +120,22 @@ func historyDashboard(state string) http.Handler {
 		}
 		if r.URL.Path == "/" {
 			var b bytes.Buffer
-			if err := experiment.WriteHistoryWithControls(&b, state, token); err != nil {
-				http.Error(w, "Cannot read history; inspect the local state directory.", 503)
+			if err := webui.Write(&b, webui.Options{Mode: "history", Token: token}); err != nil {
+				http.Error(w, "Cannot render dashboard.", 500)
 				return
 			}
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.Header().Set("Refresh", "3")
 			w.Write(b.Bytes())
+			return
+		}
+		if r.URL.Path == "/api/state" {
+			snapshot, err := experiment.Snapshot(state)
+			if err != nil {
+				http.Error(w, "Cannot read history; inspect the local state directory.", 503)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(snapshot)
 			return
 		}
 		id := strings.TrimPrefix(r.URL.Path, "/runs/")

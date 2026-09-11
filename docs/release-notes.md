@@ -1,6 +1,10 @@
 TraceFrugal checks whether an agent change reduces estimated token cost **per successful task**.
 
-Version 0.3.0 makes the first run one command: **`tracefrugal demo`**. Open the local URL to see two simulated improvements and a rejected experiment, then try the rollback and resume buttons. No configuration, Python or API key is needed for this demo.
+Version 0.4.0 opens directly into a **visual dashboard**. See the cost trend and token breakdown, click **Try optimization**, then **Undo last change**. The public browser demo needs no installation or account.
+
+The same UI is embedded in the Go app. `tracefrugal demo` starts a local synthetic workspace; `serve --state` shows real experiment history and guarded rollback. Usage mode shows task-cost and token charts. Data updates in place without full-page reloads.
+
+**Use my data** lets you open a TraceFrugal JSON report directly in your browser and explains how to connect OpenAI Responses, Anthropic Messages, or another normalized source. Files stay in the browser. Native coding-agent sessions and subscription interfaces are not automatically attached.
 
 Try the [interactive demo](https://niceysam.github.io/tracefrugal/) or open the [example HTML report](https://niceysam.github.io/tracefrugal/example-report.html).
 
@@ -8,6 +12,9 @@ See the complete [apply → reject → rollback history](https://niceysam.github
 
 Included features:
 
+- Cost trend, token ring chart, task-cost bars, outcome cards, and visual change history.
+- Interactive public demo with simulated application, quality rejection, undo, and resume.
+- Local report-file viewing with schema and consistency checks.
 - Built-in one-command demo and local browser rollback/resume controls.
 - Automatic output-cap experiments with evaluator-gated profile activation.
 - Hourly evaluations, local HTML history, guarded rollback and pause/resume.

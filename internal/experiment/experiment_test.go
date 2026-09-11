@@ -62,6 +62,11 @@ func TestApplyRollbackPauseAndResume(t *testing.T) {
 	if digest(after) != e.AfterHash {
 		t.Fatal("profile not activated")
 	}
+	snapshot, err := Snapshot(state)
+	if err != nil || snapshot.CurrentReport == nil || snapshot.CurrentReport.Tokens.Output != 500 || snapshot.RollbackID != e.ID || snapshot.Paused {
+		t.Fatalf("dashboard did not attribute active candidate: %+v %v", snapshot, err)
+	}
+	spend := snapshot.Spend
 	rollback, err := Rollback(state, e.ID)
 	if err != nil || rollback.Status != "rolled_back" {
 		t.Fatalf("%+v %v", rollback, err)
@@ -69,6 +74,10 @@ func TestApplyRollbackPauseAndResume(t *testing.T) {
 	before, _ := os.ReadFile(filepath.Join(state, "active.json"))
 	if digest(before) != e.BeforeHash {
 		t.Fatal("not restored byte for byte")
+	}
+	snapshot, err = Snapshot(state)
+	if err != nil || snapshot.CurrentReport == nil || snapshot.CurrentReport.Tokens.Output != 1000 || snapshot.RollbackID != "" || !snapshot.Paused || snapshot.Spend != spend {
+		t.Fatalf("dashboard did not restore baseline attribution / retain spend: %+v %v", snapshot, err)
 	}
 	if _, err = Run(context.Background(), config, state); err == nil {
 		t.Fatal("reapplied after rollback")

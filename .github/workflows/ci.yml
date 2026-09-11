@@ -38,3 +38,7 @@ jobs:
           cache: false
       - name: Check formatting
         run: test -z "$(gofmt -l cmd internal)"
+      - name: Check public dashboard matches embedded assets
+        run: python3 scripts/build-site.py --check
+      - name: Check dashboard JavaScript
+        run: node scripts/test-dashboard.cjs

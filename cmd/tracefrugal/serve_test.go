@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"math"
 	"net/http/httptest"
 	"net/url"
 	"os"
@@ -8,6 +10,9 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/niceysam/tracefrugal/internal/ledger"
+	"github.com/niceysam/tracefrugal/internal/webui"
 )
 
 func TestDashboardRefreshAndInvalidTrace(t *testing.T) {
@@ -15,7 +20,7 @@ func TestDashboardRefreshAndInvalidTrace(t *testing.T) {
 	h := dashboard(trace, "../../examples/prices.json")
 	get := func() *httptest.ResponseRecorder {
 		w := httptest.NewRecorder()
-		h.ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
+		h.ServeHTTP(w, httptest.NewRequest("GET", "/api/state", nil))
 		return w
 	}
 	if w := get(); w.Code != 503 {
@@ -29,7 +34,10 @@ func TestDashboardRefreshAndInvalidTrace(t *testing.T) {
 		t.Fatal(err)
 	}
 	w := get()
-	if w.Code != 200 || !strings.Contains(w.Body.String(), "$0.660000") || w.Header().Get("Refresh") != "3" {
+	var payload struct {
+		Report ledger.Report `json:"report"`
+	}
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &payload) != nil || payload.Report.CostUSD != .66 {
 		t.Fatalf("report: %d %s", w.Code, w.Body.String())
 	}
 	data, err = os.ReadFile("../../examples/candidate-good.jsonl")
@@ -39,13 +47,13 @@ func TestDashboardRefreshAndInvalidTrace(t *testing.T) {
 	if err := os.WriteFile(trace, data, 0600); err != nil {
 		t.Fatal(err)
 	}
-	if w = get(); !strings.Contains(w.Body.String(), "$0.210000") {
+	if w = get(); json.Unmarshal(w.Body.Bytes(), &payload) != nil || math.Abs(payload.Report.CostUSD-.21) > 1e-12 {
 		t.Fatal("stale report")
 	}
 	if err := os.WriteFile(trace, []byte("{"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if w = get(); w.Code != 422 || strings.Contains(w.Body.String(), "$0.210000") {
+	if w = get(); w.Code != 422 || strings.Contains(w.Body.String(), "estimated_cost_usd") {
 		t.Fatal("invalid trace presented as valid")
 	}
 	w = httptest.NewRecorder()
@@ -63,9 +71,13 @@ func TestHistoryControlsRequireSameOriginAndToken(t *testing.T) {
 	h := historyDashboard(state)
 	get := httptest.NewRecorder()
 	h.ServeHTTP(get, httptest.NewRequest("GET", "http://127.0.0.1:8765/", nil))
-	match := regexp.MustCompile(`name="token" value="([a-f0-9]+)"`).FindStringSubmatch(get.Body.String())
+	match := regexp.MustCompile(`<script id="bootstrap" type="application/json">(.+)</script>`).FindStringSubmatch(get.Body.String())
 	if get.Code != 200 || len(match) != 2 {
 		t.Fatalf("%d %s", get.Code, get.Body.String())
+	}
+	var options webui.Options
+	if err := json.Unmarshal([]byte(match[1]), &options); err != nil || options.Token == "" {
+		t.Fatal("missing bootstrap token", err)
 	}
 	post := func(origin, token string) int {
 		req := httptest.NewRequest("POST", "http://127.0.0.1:8765/resume", strings.NewReader(url.Values{"token": {token}}.Encode()))
@@ -75,7 +87,7 @@ func TestHistoryControlsRequireSameOriginAndToken(t *testing.T) {
 		h.ServeHTTP(w, req)
 		return w.Code
 	}
-	if post("https://other.example", match[1]) != 403 {
+	if post("https://other.example", options.Token) != 403 {
 		t.Fatal("cross-origin write permitted")
 	}
 	if post("http://127.0.0.1:8765", "bad") != 403 {
@@ -84,7 +96,7 @@ func TestHistoryControlsRequireSameOriginAndToken(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(state, "paused")); err != nil {
 		t.Fatal("unauthorized state change")
 	}
-	if post("http://127.0.0.1:8765", match[1]) != 303 {
+	if post("http://127.0.0.1:8765", options.Token) != 303 {
 		t.Fatal("valid resume failed")
 	}
 	if _, err := os.Stat(filepath.Join(state, "paused")); !os.IsNotExist(err) {

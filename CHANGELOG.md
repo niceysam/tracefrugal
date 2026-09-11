@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0
+
+- Visual dashboard shared by the public website and the Go binary: evaluation cost trend, token ring chart, task-cost bars, and outcome cards.
+- Installation-free browser demo with interactive apply, reject, undo, resume, and history.
+- "Use my data" screen with local JSON report viewing and source-specific connection guidance.
+- Graphs and active-profile usage update after rollback; recorded testing spend is retained.
+- Background polling replaces full-page reloads; unchanged data preserves focus and expanded details.
+- Public assets checked against embedded sources in CI; demo transitions and import validation tested without JavaScript dependencies.
+- The former landing-page cost calculator remains at `methodology.html`.
+
 ## 0.3.0
 
 - One-command `demo` with a built-in synthetic evaluator: no configuration, Python or API key.

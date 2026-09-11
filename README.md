@@ -1,5 +1,8 @@
-[![TraceFrugal — Fewer tokens. Higher bill?](assets/hero.svg)](https://niceysam.github.io/tracefrugal/)
-<p align="center"><a href="https://niceysam.github.io/tracefrugal/"><strong>Interactive demo</strong></a> · <a href="https://niceysam.github.io/tracefrugal/example-history.html"><strong>Optimization history</strong></a> · <a href="https://niceysam.github.io/tracefrugal/example-report.html"><strong>HTML report</strong></a> · <a href="https://github.com/niceysam/tracefrugal/releases/latest">Download</a> · <a href="docs/providers.md">Provider support</a></p>
+# TraceFrugal
+
+### See your AI costs. Try a change. Undo it.
+
+<p><a href="https://niceysam.github.io/tracefrugal/"><strong>Open the dashboard →</strong></a> · <a href="https://github.com/niceysam/tracefrugal/releases/latest">Download the local app</a> · <a href="docs/providers.md">Provider support</a></p>
 <p align="center">
   <a href="https://github.com/niceysam/tracefrugal/actions/workflows/ci.yml"><img src="https://github.com/niceysam/tracefrugal/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/niceysam/tracefrugal/releases"><img src="https://img.shields.io/github/v/release/niceysam/tracefrugal" alt="Release"></a>
@@ -13,7 +16,21 @@ TraceFrugal shows your recorded usage in a local dashboard, suggests optimizatio
 
 **One Go binary. No runtime dependencies. No API key. No outbound network calls.**
 
-## Start here
+## Try it in your browser
+
+**[Open the interactive dashboard](https://niceysam.github.io/tracefrugal/)** — no install, sign-up, or API key.
+
+1. See costs and token categories in the graphs.
+2. Click **Try optimization**. A simulated trial updates the cost, checks, and history.
+3. Click it again to see a cheaper candidate rejected when quality fails.
+4. Click **Undo last change** to restore the previous setting and pause trials.
+
+The public demo uses synthetic data. It does not connect to an AI account or generate actual savings.
+**Use my data** opens a report file locally in your browser or guides you through connecting an API application.
+
+[![TraceFrugal dashboard with cost trend, token breakdown, and optimization controls](assets/demo-dashboard.png)](https://niceysam.github.io/tracefrugal/)
+
+## Run the local app
 
 [Download the binary for your system](https://github.com/niceysam/tracefrugal/releases/latest), extract it, and run:
 
@@ -23,16 +40,9 @@ TraceFrugal shows your recorded usage in a local dashboard, suggests optimizatio
 
 On Windows, use `.\tracefrugal.exe demo`. Open **http://127.0.0.1:8765/**.
 No config, Python, Git clone, or API account is needed for this demo.
-It simulates two successful optimizations and a rejected one. Click **Restore previous settings & pause** to try rollback, then **Allow experiments again** to clear the pause. Only demo files change.
+It simulates two successful optimizations and a rejected one. Click **Undo last change**, then **Restore & pause** to try rollback. **Allow experiments again** clears the pause. Only demo files change.
 
 Ready for real usage? Follow the [API connection walkthrough](docs/live-dashboard.md).
-
-<details>
-<summary>See the local dashboard (synthetic demo)</summary>
-
-![Experiment history with costs, decisions, and restore control](assets/demo-dashboard.png)
-
-</details>
 
 ## Watch your own usage
 
@@ -42,7 +52,7 @@ Connect the [SDK recorder](examples/record_usage.py) to your OpenAI Responses or
 tracefrugal serve --trace run.jsonl --prices prices.json
 ```
 
-Open **http://127.0.0.1:8765/** for token categories, estimated spend, cache usage, expensive tasks and suggested next experiments. The page refreshes every three seconds.
+Open **http://127.0.0.1:8765/** for token and task-cost charts, estimated spend, cache usage, and task outcomes. Data updates every three seconds without reloading the page.
 
 [Connection walkthrough and limitations →](docs/live-dashboard.md)
 
@@ -55,7 +65,7 @@ tracefrugal experiment --config examples/experiment/experiment.json --state runs
 tracefrugal serve --state runs/demo
 ```
 
-The included synthetic demo needs Python 3 and makes no model calls. The experiment runner generates a smaller output cap, evaluates it, and updates a managed profile only if cost per success falls without new task failures. HTML history records each decision and provides the rollback command. Rollback pauses automation.
+This alternative example needs Python 3 and makes no model calls. The experiment runner generates a smaller output cap, evaluates it, and updates a managed profile only if cost per success falls without new task failures. The visual dashboard records each decision and provides a rollback button. Rollback pauses automation.
 
 For real apps, connect an evaluator and make your app consume the active profile. Use `--every 1h --max-runs 24` for recurring evaluations. API evaluations incur their own costs.
 

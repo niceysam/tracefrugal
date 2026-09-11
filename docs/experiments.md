@@ -48,7 +48,7 @@ tracefrugal rollback --state runs/demo --id EXPERIMENT_ID
 It restores the previous profile byte for byte and pauses automation. A new
 rollback event appears in the timeline. It refuses to overwrite intervening
 manual or newer profile changes. Roll back applied changes from newest to oldest.
-The local dashboard offers the same operation as a **Restore previous settings & pause**
+The local dashboard offers the same operation through **Undo last change → Restore & pause**
 button for the currently matching profile. Static exported examples have no
 controls. **Allow experiments again** clears the pause without starting a scheduler.
 
