@@ -17,6 +17,7 @@ var version = "dev"
 const help = `TraceFrugal — fewer tokens is not always a cheaper agent.
 
 Usage:
+  tracefrugal demo [--port 8765]
   tracefrugal report --trace run.jsonl --prices prices.json [--format text|json|html]
   tracefrugal compare --baseline before.jsonl --candidate after.jsonl --prices prices.json [--max-increase 5] [--format text|json|html]
   tracefrugal normalize --provider openai|anthropic --task TASK --response response.json [--request-id ID]
@@ -55,6 +56,12 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	if args[0] == "serve" {
 		return serve(args[1:], stderr)
+	}
+	if args[0] == "demo" {
+		return demo(args[1:], stdout, stderr)
+	}
+	if args[0] == "demo-evaluate" {
+		return demoEvaluator(stderr)
 	}
 	if args[0] == "experiment" || args[0] == "rollback" || args[0] == "resume" {
 		return experimentCommand(args[0], args[1:], stdout, stderr)

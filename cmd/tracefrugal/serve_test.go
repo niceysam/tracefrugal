@@ -2,8 +2,10 @@ package main
 
 import (
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -50,5 +52,47 @@ func TestDashboardRefreshAndInvalidTrace(t *testing.T) {
 	h.ServeHTTP(w, httptest.NewRequest("POST", "/", nil))
 	if w.Code != 405 {
 		t.Fatal("accepted write")
+	}
+}
+
+func TestHistoryControlsRequireSameOriginAndToken(t *testing.T) {
+	state := t.TempDir()
+	if err := os.WriteFile(filepath.Join(state, "paused"), []byte("paused"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	h := historyDashboard(state)
+	get := httptest.NewRecorder()
+	h.ServeHTTP(get, httptest.NewRequest("GET", "http://127.0.0.1:8765/", nil))
+	match := regexp.MustCompile(`name="token" value="([a-f0-9]+)"`).FindStringSubmatch(get.Body.String())
+	if get.Code != 200 || len(match) != 2 {
+		t.Fatalf("%d %s", get.Code, get.Body.String())
+	}
+	post := func(origin, token string) int {
+		req := httptest.NewRequest("POST", "http://127.0.0.1:8765/resume", strings.NewReader(url.Values{"token": {token}}.Encode()))
+		req.Header.Set("Origin", origin)
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		return w.Code
+	}
+	if post("https://other.example", match[1]) != 403 {
+		t.Fatal("cross-origin write permitted")
+	}
+	if post("http://127.0.0.1:8765", "bad") != 403 {
+		t.Fatal("bad token permitted")
+	}
+	if _, err := os.Stat(filepath.Join(state, "paused")); err != nil {
+		t.Fatal("unauthorized state change")
+	}
+	if post("http://127.0.0.1:8765", match[1]) != 303 {
+		t.Fatal("valid resume failed")
+	}
+	if _, err := os.Stat(filepath.Join(state, "paused")); !os.IsNotExist(err) {
+		t.Fatal("resume did not remove pause")
+	}
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, httptest.NewRequest("GET", "http://rebind.example:8765/", nil))
+	if w.Code != 403 {
+		t.Fatal("untrusted host allowed")
 	}
 }

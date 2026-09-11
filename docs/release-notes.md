@@ -1,6 +1,6 @@
 TraceFrugal checks whether an agent change reduces estimated token cost **per successful task**.
 
-Version 0.2.0 adds a local usage dashboard, an SDK recorder example, optimization suggestions and offline HTML reports.
+Version 0.3.0 makes the first run one command: **`tracefrugal demo`**. Open the local URL to see two simulated improvements and a rejected experiment, then try the rollback and resume buttons. No configuration, Python or API key is needed for this demo.
 
 Try the [interactive demo](https://niceysam.github.io/tracefrugal/) or open the [example HTML report](https://niceysam.github.io/tracefrugal/example-report.html).
 
@@ -8,6 +8,7 @@ See the complete [apply → reject → rollback history](https://niceysam.github
 
 Included features:
 
+- Built-in one-command demo and local browser rollback/resume controls.
 - Automatic output-cap experiments with evaluator-gated profile activation.
 - Hourly evaluations, local HTML history, guarded rollback and pause/resume.
 - `serve`: refresh recorded usage in a local browser every three seconds.

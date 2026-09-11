@@ -13,6 +13,27 @@ TraceFrugal shows your recorded usage in a local dashboard, suggests optimizatio
 
 **One Go binary. No runtime dependencies. No API key. No outbound network calls.**
 
+## Start here
+
+[Download the binary for your system](https://github.com/niceysam/tracefrugal/releases/latest), extract it, and run:
+
+```sh
+./tracefrugal demo
+```
+
+On Windows, use `.\tracefrugal.exe demo`. Open **http://127.0.0.1:8765/**.
+No config, Python, Git clone, or API account is needed for this demo.
+It simulates two successful optimizations and a rejected one. Click **Restore previous settings & pause** to try rollback, then **Allow experiments again** to clear the pause. Only demo files change.
+
+Ready for real usage? Follow the [API connection walkthrough](docs/live-dashboard.md).
+
+<details>
+<summary>See the local dashboard (synthetic demo)</summary>
+
+![Experiment history with costs, decisions, and restore control](assets/demo-dashboard.png)
+
+</details>
+
 ## Watch your own usage
 
 Connect the [SDK recorder](examples/record_usage.py) to your OpenAI Responses or Anthropic Messages application, supply your model prices, then run:

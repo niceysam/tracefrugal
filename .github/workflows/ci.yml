@@ -26,6 +26,8 @@ jobs:
         run: go vet ./...
       - name: Build
         run: go build ./cmd/tracefrugal
+      - name: One-command demo smoke test
+        run: go run ./cmd/tracefrugal demo --no-serve
   formatting:
     runs-on: ubuntu-latest
     steps:

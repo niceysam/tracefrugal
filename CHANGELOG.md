@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- One-command `demo` with a built-in synthetic evaluator: no configuration, Python or API key.
+- Local dashboard buttons for guarded rollback and explicit resume.
+- Same-origin, per-session token and loopback-host checks for browser controls.
+- Clear synthetic-demo status and a first-run walkthrough.
+
 ## 0.2.0
 
 - Evaluated output-cap experiments with optional automatic profile activation.

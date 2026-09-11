@@ -129,6 +129,10 @@ tracefrugal compare \
   --max-increase 5</pre></div><p class="fine"><a href="https://github.com/niceysam/tracefrugal/releases/latest">Prebuilt binaries</a> for macOS, Linux, and Windows · amd64 and arm64</p></div>
     </section>
     <section aria-labelledby="watch-title">
+      <div class="eyebrow">Start here</div><h2>One command.<br>See the whole loop.</h2>
+      <pre>./tracefrugal demo</pre>
+      <p><a href="https://github.com/niceysam/tracefrugal/releases/latest">Download and extract the binary</a>, run the command, and open <strong>http://127.0.0.1:8765/</strong>. On Windows, run <code>.\tracefrugal.exe demo</code>. No config, Python or API key needed.</p>
+      <p>See two simulated improvements and one rejected experiment. Try <strong>Restore previous settings &amp; pause</strong> in the browser. Only demo files change.</p>
       <div class="eyebrow">Watch your own usage</div><h2 id="watch-title">See it. Change it. Verify it.</h2>
       <p>Connect your OpenAI or Anthropic application with the usage-only SDK recorder. Open a local dashboard that refreshes every three seconds: token categories, estimated spend, cache reuse and suggested experiments.</p>
       <pre>tracefrugal serve --trace run.jsonl --prices prices.json</pre>

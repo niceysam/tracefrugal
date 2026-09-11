@@ -10,6 +10,14 @@ compress prompts, remove tools, or switch models.
 
 ## Try the complete loop without API charges
 
+The fastest way is **`tracefrugal demo`**. Open the printed local URL and use
+the restore/resume buttons. It requires only the downloaded binary.
+The demo runs its own built-in synthetic evaluator and stores files in a new
+`runs/demo-<timestamp>` directory. Stop the dashboard with Ctrl-C; the history
+remains. `tracefrugal demo --no-serve` generates the history without a server.
+
+For a worked example of connecting an external evaluator, use the Python fixture:
+
 From a cloned repository with TraceFrugal installed and Python 3 available:
 
 ```sh
@@ -40,6 +48,9 @@ tracefrugal rollback --state runs/demo --id EXPERIMENT_ID
 It restores the previous profile byte for byte and pauses automation. A new
 rollback event appears in the timeline. It refuses to overwrite intervening
 manual or newer profile changes. Roll back applied changes from newest to oldest.
+The local dashboard offers the same operation as a **Restore previous settings & pause**
+button for the currently matching profile. Static exported examples have no
+controls. **Allow experiments again** clears the pause without starting a scheduler.
 
 ## Connect a real agent
 

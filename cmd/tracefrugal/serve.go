@@ -2,6 +2,9 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/subtle"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"io"
@@ -66,10 +69,38 @@ func dashboard(trace, prices string) http.Handler {
 }
 
 func historyDashboard(state string) http.Handler {
+	random := make([]byte, 32)
+	if _, err := rand.Read(random); err != nil {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { http.Error(w, "Cannot initialize local controls", 500) })
+	}
+	token := hex.EncodeToString(random)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'")
+		w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; form-action 'self'")
+		host, _, err := net.SplitHostPort(r.Host)
+		if err != nil || (host != "127.0.0.1" && host != "localhost") {
+			http.Error(w, "Local host required", 403)
+			return
+		}
+		if r.Method == http.MethodPost && (r.URL.Path == "/rollback" || r.URL.Path == "/resume") {
+			r.Body = http.MaxBytesReader(w, r.Body, 8192)
+			if r.Header.Get("Origin") != "http://"+r.Host || r.ParseForm() != nil || subtle.ConstantTimeCompare([]byte(r.PostForm.Get("token")), []byte(token)) != 1 {
+				http.Error(w, "Invalid local form. Reload the dashboard and retry.", 403)
+				return
+			}
+			if r.URL.Path == "/rollback" {
+				_, err = experiment.Rollback(state, r.PostForm.Get("id"))
+			} else {
+				_, err = experiment.Resume(state)
+			}
+			if err != nil {
+				http.Error(w, "Action refused: state changed, is locked, or snapshot is invalid. Reload and inspect the local journal.", 409)
+				return
+			}
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
 		if r.Method != http.MethodGet {
 			w.Header().Set("Allow", "GET")
 			http.Error(w, "Method not allowed", 405)
@@ -77,7 +108,7 @@ func historyDashboard(state string) http.Handler {
 		}
 		if r.URL.Path == "/" {
 			var b bytes.Buffer
-			if err := experiment.WriteHistory(&b, state); err != nil {
+			if err := experiment.WriteHistoryWithControls(&b, state, token); err != nil {
 				http.Error(w, "Cannot read history; inspect the local state directory.", 503)
 				return
 			}
