@@ -47,7 +47,7 @@ async function test() {
   // Consume a real CLI export so the viewer and Go report schema cannot drift.
   context.exportedReport = JSON.parse(execFileSync("go",["run","./cmd/tracefrugal","report",
     "--trace","examples/baseline.jsonl","--prices","examples/prices.json","--format","json"],{encoding:"utf8"}));
-  assert.equal(run("validateReport(exportedReport).estimated_cost_usd"),.66);
+  assert.ok(Math.abs(run("validateReport(exportedReport).estimated_cost_usd")-.66)<1e-12);
   run("state={report:validateReport(exportedReport),entries:[],spend:0}; render()");
   assert.ok(element("metrics").innerHTML.includes("$0.6600"));
   assert.equal((element("trend").innerHTML.match(/<rect /g)||[]).length,2);

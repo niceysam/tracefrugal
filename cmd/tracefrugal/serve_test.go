@@ -37,7 +37,7 @@ func TestDashboardRefreshAndInvalidTrace(t *testing.T) {
 	var payload struct {
 		Report ledger.Report `json:"report"`
 	}
-	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &payload) != nil || payload.Report.CostUSD != .66 {
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &payload) != nil || math.Abs(payload.Report.CostUSD-.66) > 1e-12 {
 		t.Fatalf("report: %d %s", w.Code, w.Body.String())
 	}
 	data, err = os.ReadFile("../../examples/candidate-good.jsonl")
