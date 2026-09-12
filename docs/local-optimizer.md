@@ -101,6 +101,12 @@ Unmatched subagents, other stores and other versions are excluded.
 
 ## Compare carefully, then keep or undo
 
+The comparison now leads with total estimated cost and four paired bars:
+total input, response count, input per response and cost. It flags smaller
+requests that add more input overall, or fewer input tokens with a higher
+estimate. Cost-category bars and a cumulative input/cache-read graph give
+context. See [cache economics](cache-economics.md) for examples and limitations.
+
 ![Actual fixture observations and restored history](../assets/optimizer-history.png)
 
 This screenshot contains short fixture runs with unequal observation windows,

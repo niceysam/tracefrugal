@@ -13,10 +13,25 @@ type Summary struct {
 	KnownUSD  float64       `json:"known_usd"`
 	Unpriced  int           `json:"unpriced"`
 	Reasoning int64         `json:"reasoning_output"`
+	Main      int           `json:"main_responses"`
+	Subagent  int           `json:"subagent_responses"`
+	Spend     Spend         `json:"spend"`
+}
+
+// Spend includes only known, categorized list-price estimates. Coverage is
+// explicit so an older archive or an unpriced provider never looks free.
+type Spend struct {
+	Responses int     `json:"responses"`
+	USD       Amounts `json:"usd"`
 }
 
 func (s *Summary) Add(q Request) {
 	s.Requests++
+	if q.Subagent {
+		s.Subagent++
+	} else {
+		s.Main++
+	}
 	s.Tokens.Input += q.Tokens.Input
 	s.Tokens.CachedInput += q.Tokens.CachedInput
 	s.Tokens.CacheWrite += q.Tokens.CacheWrite
@@ -27,6 +42,15 @@ func (s *Summary) Add(q Request) {
 		s.Unpriced++
 	} else {
 		s.KnownUSD += *q.Cost
+		if q.Pricing != nil && q.Pricing.USD != nil {
+			s.Spend.Responses++
+			p := q.Pricing.USD
+			s.Spend.USD.Input += p.Input
+			s.Spend.USD.CachedInput += p.CachedInput
+			s.Spend.USD.CacheWrite += p.CacheWrite
+			s.Spend.USD.CacheWrite1h += p.CacheWrite1h
+			s.Spend.USD.Output += p.Output
+		}
 	}
 }
 

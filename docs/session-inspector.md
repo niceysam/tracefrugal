@@ -69,6 +69,12 @@ subtotals; the cost graph shows a gap where coverage is incomplete.
 
 ## Compare and act
 
+The cache economics panel puts token share beside a colored cost-category
+breakdown. Session comparisons add four paired bars and signals for increased
+total input, increased cost, different periods/models, missing prices and
+unchecked quality. [Interpret those signals](cache-economics.md) before deciding
+that a smaller prompt helped.
+
 **Compare another session** puts response counts, mean/P95 input, cache reads,
 output and cost side by side. More requests and different models or task
 difficulty can explain a bigger bill. Comparing sessions does not establish

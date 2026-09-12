@@ -15,6 +15,7 @@ function element(id) {
   return elements.get(id);
 }
 const context = vm.createContext({document:{getElementById:element,querySelectorAll:()=>[],addEventListener(){}},setInterval(){},URLSearchParams,console});
+vm.runInContext(fs.readFileSync("internal/webui/economics.js","utf8"),context);
 vm.runInContext(fs.readFileSync("internal/webui/claude.js","utf8"),context);
 const run=code=>vm.runInContext(code,context);
 async function test() {

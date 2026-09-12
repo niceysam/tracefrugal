@@ -1,35 +1,29 @@
-TraceFrugal v0.8.0 adds a **local, reversible Claude Code optimizer**.
+TraceFrugal v0.9.0 makes **cache reuse and whole-workload costs** easier to compare.
 
-```sh
-tracefrugal optimize --project /path/to/your/project
-```
+* See cache-token share beside estimated cache-read, new-input, cache-write and
+  output costs. Partial pricing is explicit; native Codex remains unpriced.
+* Compare total input, model responses, input per response and total estimated
+  cost. Warnings identify smaller requests with more input overall, or fewer
+  input tokens with higher estimated cost.
+* Review cumulative input/cache reads in local optimizer trials, together with
+  answer satisfaction, missing evidence and existing Keep / Restore controls.
+* Historical records without new cost/agent breakdowns show unavailable
+  details instead of invented zero values.
+* English/Korean UI and guides, with deterministic checks and no extra LLM calls.
 
-Check your installed CLI and official docs, preview a project-local MCP result
-limit, apply with a backup, work in a fresh Claude session, then compare hourly
-usage and quality. Keep, restore, and reapply decisions remain in local history.
-The browser is a loopback control panel for the Go binary.
+The local settings recipe remains experimental and version-gated to Claude Code
+2.1.268. No provider prices or supported optimization versions changed.
+Comparison warnings describe observations; they do not establish matched-task
+savings, cache-miss causes, completed tasks, active working time or productivity.
+Recorded subagents count; unrecorded work cannot be recovered.
 
-* Version-gated recipe for Claude Code **2.1.268**; other versions stay read-only.
-* Actual SessionStart evidence and exact project/session/version usage matching.
-* Original settings preserved; external edits protected; interrupted changes recoverable.
-* English/Korean controls and guides.
-* Seven real CLI sessions / 19 responses reconciled against root usage in every
-  token category. Published failed trials alongside successful ones.
+[English guide](https://github.com/niceysam/tracefrugal/blob/main/docs/cache-economics.md) ·
+[한국어 안내](https://github.com/niceysam/tracefrugal/blob/main/docs/cache-economics.ko.md) ·
+[Prior real CLI measurements](https://github.com/niceysam/tracefrugal/blob/main/docs/optimizer-validation.md)
 
-**Experimental:** the final bounded comparison passed both exact-answer checks
-and reduced input by 2.9%, but added a model response and took longer. Cost
-differences also reflect cache behavior. This is not a proven default
-optimization or a day-long productivity result. Codex stays available for usage
-visibility; this settings recipe is Claude-specific.
-
-[English guide](https://github.com/niceysam/tracefrugal/blob/main/docs/local-optimizer.md) ·
-[한국어 사용법](https://github.com/niceysam/tracefrugal/blob/main/docs/local-optimizer.ko.md) ·
-[Measured results and failures](https://github.com/niceysam/tracefrugal/blob/main/docs/optimizer-validation.md)
-
-**한국어:** 그래프 조회에서 실제 환경의 설정 적용·비교·유지·원복까지 이어지는
-기능을 추가했습니다. 설정이 저장됐는지와 새 세션에 적용됐는지를 구분합니다.
-실제 시험에서는 입력 감소와 호출 증가가 함께 나타났으므로 무조건 절약된다고
-표시하지 않습니다. 현재 검증한 CLI 버전에만 적용을 허용합니다.
+**한국어:** 입력을 줄였어도 호출이 늘거나 추정 비용이 오를 수 있습니다.
+캐시 비중·비용 구성·전체 사용량을 함께 비교하고, 품질을 확인한 뒤 유지 또는
+원복하도록 개선했습니다. 캐싱 자체를 낭비로 판정하거나 절감액을 만들어내지 않습니다.
 
 No API key is needed by TraceFrugal. Your normal Claude usage keeps its normal
 costs. Verify downloads with `checksums.txt`. macOS binaries are not notarized.

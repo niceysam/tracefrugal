@@ -9,6 +9,7 @@ const ctx=vm.createContext({console,URL,URLSearchParams,Intl,Date,navigator:{lan
  fetch:async(url,options)=>{calls.push({url,options});return {ok:true,json:async()=>structuredClone(report)}}});
 const source=fs.readFileSync("internal/webui/optimizer.js","utf8");
 assert.ok(!source.includes("\uFFFD"),"Korean replacement character");
+vm.runInContext(fs.readFileSync("internal/webui/economics.js","utf8"),ctx);
 vm.runInContext(source,ctx);
 async function run(){
  await vm.runInContext("refresh()",ctx);

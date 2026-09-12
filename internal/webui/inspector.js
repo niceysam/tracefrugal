@@ -35,7 +35,7 @@
     }).join("");
   }
   function comparisonHTML(a,b,hidden){
-    if(!b)return "";
+    if(!a||!b)return "";
     const rows=[
       ["Recorded responses",num(a.requests),num(b.requests)],
       ["Input / response",num(Math.round(input(a)/a.requests||0)),num(Math.round(input(b)/b.requests||0))],
@@ -64,15 +64,17 @@
       <div class="inspector-stats">${facts.map(([k,v])=>`<div><span>${t(k)}</span><strong>${v}</strong></div>`).join("")}</div>
       <p class="small">${t("P50 is the median input; P95 is the input at the 95th percentile. Cache reads and writes are included. Statistics cover all responses in the selected period.")}</p>
       <p class="notice">${t("Responses include tool loops and recorded subagents, not just user questions. Processed tokens count repeated context; they are not the context-window size.")}</p>
+      ${root.TraceEconomics.spendHTML(s,undefined,s.prices||[])}
       <h3>${t("How this cost was calculated")}</h3><p>${t("For each response: tokens ÷ 1,000,000 × the category rate. Then add all categories and responses.")}</p>
       <p class="small">${t("Standard list-price estimate, not an invoice. Subscription plans, provider discounts, credits and taxes are not applied.")}</p>
       <p class="small">${t("Price source")}: <span>${esc(t(report.price_label))}</span></p>${priceHTML(s)}
       <h3>${t("Compare another session")}</h3><label for="compare-session">${t("Choose a comparison")}</label><select id="compare-session" data-no-i18n><option value="">${t("Choose a comparison")}</option>${report.sessions.filter(x=>x.id!==s.id).map(x=>`<option value="${esc(x.id)}" ${x.id===compareID?"selected":""}>${esc(name(x,hidden))}</option>`).join("")}</select>
-      ${comparisonHTML(s,report.sessions.find(x=>x.id===compareID&&x.id!==s.id),hidden)}`;
+      ${comparisonHTML(report.sessions.find(x=>x.id===compareID&&x.id!==s.id),s,hidden)}
+      ${compareID&&report.sessions.some(x=>x.id===compareID&&x.id!==s.id)?root.TraceEconomics.comparisonHTML(report.sessions.find(x=>x.id===compareID),s,{beforeLabel:name(report.sessions.find(x=>x.id===compareID),hidden),afterLabel:name(s,hidden),incomplete:root.TraceEconomics.incomplete(report)}):""}`;
   }
   function exportData(s,report){
     // Explicit allowlist: no project paths, local aliases, prompts, or raw events.
-    return {schema:"tracefrugal.session.v1",period:{from:report.from,until:report.until},session_id:s.id,observed_start:s.start,observed_end:s.end,models:s.models,requests:s.requests,tokens:s.tokens,known_usd:s.known_usd,unpriced:s.unpriced,stats:s.stats,prices:s.prices,price_label:report.price_label};
+    return {schema:"tracefrugal.session.v1",period:{from:report.from,until:report.until},session_id:s.id,observed_start:s.start,observed_end:s.end,models:s.models,requests:s.requests,tokens:s.tokens,known_usd:s.known_usd,unpriced:s.unpriced,stats:s.stats,spend:s.spend,prices:s.prices,price_label:report.price_label};
   }
   root.TraceInspector={shortID,name,saveName,html,exportData};
 })(globalThis);

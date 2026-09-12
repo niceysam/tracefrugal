@@ -50,3 +50,5 @@ jobs:
         run: node scripts/test-i18n.cjs
       - name: Check local optimizer controls and evidence
         run: node scripts/test-optimizer.cjs
+      - name: Check cache economics and comparison signals
+        run: node scripts/test-economics.cjs

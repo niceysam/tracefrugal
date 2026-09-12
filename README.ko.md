@@ -35,6 +35,11 @@ tracefrugal optimize --project /작업/프로젝트
 
 **[사용 방법 →](docs/local-optimizer.ko.md)**
 
+**캐시를 잘 써도 전체 작업 비용은 확인해야 합니다.** 캐시 토큰 비중과 실제 추정 비용
+구성을 함께 보고, 입력이 줄었어도 호출이나 비용이 늘면 비교 화면에서 짚어 줍니다.
+누적 그래프와 만족도를 확인한 뒤 유지하거나 원복하세요.
+[캐시·총비용 판단 안내 →](docs/cache-economics.ko.md)
+
 ## 바로 사용하기
 
 1. [내 컴퓨터용 파일](https://github.com/niceysam/tracefrugal/releases/latest)을 받고 압축을 푸세요.

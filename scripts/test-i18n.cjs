@@ -11,7 +11,7 @@ function setup({href="https://example.test",saved,nav="en-US",blocked=false}={})
   const values=new Map(saved?[["tracefrugal.language",saved]]:[]);
   const root={URL,Event:class{},location:{href},navigator:{language:nav},localStorage:{getItem:k=>{if(blocked)throw Error();return values.get(k)},setItem:(k,v)=>{if(blocked)throw Error();values.set(k,v)}},document:{documentElement:el,querySelectorAll:()=>[]},dispatchEvent(){}};
   const ctx=vm.createContext(root);
-  for(const name of ["i18n-ko.js","i18n.js","inspector.js"])vm.runInContext(fs.readFileSync("internal/webui/"+name,"utf8"),ctx);
+  for(const name of ["i18n-ko.js","i18n.js","economics.js","inspector.js"])vm.runInContext(fs.readFileSync("internal/webui/"+name,"utf8"),ctx);
   return {ctx,el,label,space,skip,values};
 }
 const a=setup({href:"https://example.test/?lang=ko",saved:"en"});

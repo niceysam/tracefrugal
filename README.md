@@ -108,6 +108,12 @@ short. Why is input so large?** for a visual explanation of how tool results
 and retained answers become input again.
 [Session inspector and cost guide →](docs/session-inspector.md)
 
+**Cache reuse is useful; check the whole workload too.** Compare cache-token
+share with category costs, total input and response counts. The optimizer's
+cumulative graph and comparison warnings help catch smaller prompts that
+produce more calls or a higher bill. Quality remains a separate check.
+[Read the cache economics guide →](docs/cache-economics.md)
+
 **Honest boundaries:** dollars are dated list-price estimates, not subscription
 bills. Unknown pricing stays visibly unpriced. A lower hourly total is not proof
 of savings: the work and its quality may have changed. Tool-result bytes are
