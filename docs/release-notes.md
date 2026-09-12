@@ -1,30 +1,35 @@
-TraceFrugal v0.7.0 makes sessions and costs understandable in **English and Korean**.
+TraceFrugal v0.8.0 adds a **local, reversible Claude Code optimizer**.
 
-[English dashboard](https://niceysam.github.io/tracefrugal/?lang=en) ·
-[한국어 대시보드](https://niceysam.github.io/tracefrugal/?lang=ko) ·
-[한국어 사용 안내](https://github.com/niceysam/tracefrugal/blob/main/README.ko.md)
+```sh
+tracefrugal optimize --project /path/to/your/project
+```
 
-* Distinguish sessions with stable short IDs, models, observed dates and local names.
-* Inspect input median, P95, maximum and main/subagent response counts across the selected period.
-* See how each token category and effective model rate contributes to estimated dollars.
-* See why a record is unpriced; unknown costs are never presented as zero.
-* Compare sessions and export aggregate metadata without project names or raw events.
-* Explore how short questions lead to repeated input with a diagram and request slider.
-* Switch both native and API dashboards between English and Korean, entirely offline.
+Check your installed CLI and official docs, preview a project-local MCP result
+limit, apply with a backup, work in a fresh Claude session, then compare hourly
+usage and quality. Keep, restore, and reapply decisions remain in local history.
+The browser is a loopback control panel for the Go binary.
 
-Run `./tracefrugal` on macOS/Linux, or `.\tracefrugal.exe` on Windows.
-The browser opens with local Claude Code and Codex usage. Existing 24-hour
-context trials, satisfaction history and opt-in MCP packing remain available.
+* Version-gated recipe for Claude Code **2.1.268**; other versions stay read-only.
+* Actual SessionStart evidence and exact project/session/version usage matching.
+* Original settings preserved; external edits protected; interrupted changes recoverable.
+* English/Korean controls and guides.
+* Seven real CLI sessions / 19 responses reconciled against root usage in every
+  token category. Published failed trials alongside successful ones.
 
-**한국어:** 같은 프로젝트의 세션을 구분하고, 입력·캐시·출력별 비용 계산식을
-확인할 수 있습니다. 세션 이름 지정·검색·P95 입력 분석·다른 세션과 비교를
-추가했습니다. 화면 위에서 한국어를 선택하세요. 짧은 질문에도 누적 입력이
-커지는 이유를 그림과 슬라이더로 설명합니다.
+**Experimental:** the final bounded comparison passed both exact-answer checks
+and reduced input by 2.9%, but added a model response and took longer. Cost
+differences also reflect cache behavior. This is not a proven default
+optimization or a day-long productivity result. Codex stays available for usage
+visibility; this settings recipe is Claude-specific.
 
-Prices use the existing dated standard list-rate book, not invoices or
-subscription bills. Native Codex costs remain unpriced. Different-session
-comparisons do not establish causal savings or equal quality. Public samples
-are synthetic; no real 24-hour savings claim is made. Model IDs, code and
-user-provided names stay literal in both languages.
+[English guide](https://github.com/niceysam/tracefrugal/blob/main/docs/local-optimizer.md) ·
+[한국어 사용법](https://github.com/niceysam/tracefrugal/blob/main/docs/local-optimizer.ko.md) ·
+[Measured results and failures](https://github.com/niceysam/tracefrugal/blob/main/docs/optimizer-validation.md)
 
-Verify downloads with `checksums.txt`. macOS releases are not notarized.
+**한국어:** 그래프 조회에서 실제 환경의 설정 적용·비교·유지·원복까지 이어지는
+기능을 추가했습니다. 설정이 저장됐는지와 새 세션에 적용됐는지를 구분합니다.
+실제 시험에서는 입력 감소와 호출 증가가 함께 나타났으므로 무조건 절약된다고
+표시하지 않습니다. 현재 검증한 CLI 버전에만 적용을 허용합니다.
+
+No API key is needed by TraceFrugal. Your normal Claude usage keeps its normal
+costs. Verify downloads with `checksums.txt`. macOS binaries are not notarized.

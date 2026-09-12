@@ -28,6 +28,7 @@ type Request struct {
 	ID         string        `json:"-"`
 	Session    string        `json:"session"`
 	Project    string        `json:"project"`
+	ProjectID  string        `json:"-"` // Exact cwd identity for local project-scoped trials.
 	Model      string        `json:"model"`
 	Time       time.Time     `json:"time"`
 	Tokens     ledger.Tokens `json:"tokens"`
@@ -139,8 +140,10 @@ func (r *Reader) Read(root string) ([]Request, Health, error) {
 			// Copied/forked transcripts belong to the earliest observed owner.
 			if q.Time.Before(old.Time) {
 				best.Time, best.Session, best.Project, best.Subagent = q.Time, q.Session, q.Project, q.Subagent
+				best.ProjectID, best.Version = q.ProjectID, q.Version
 			} else {
 				best.Time, best.Session, best.Project, best.Subagent = old.Time, old.Session, old.Project, old.Subagent
+				best.ProjectID, best.Version = old.ProjectID, old.Version
 			}
 			unique[q.ID] = best
 		}
@@ -280,7 +283,7 @@ func parse(line []byte, path string) (Request, bool, error) {
 		cost = &value
 	}
 	return Request{
-		ID: hash(row.Message.ID), Session: hash(row.Session), Project: project,
+		ID: hash(row.Message.ID), Session: hash(row.Session), Project: project, ProjectID: hash(filepath.Clean(row.CWD)),
 		Model: row.Message.Model, Time: when, Tokens: tokens,
 		Cost: cost, Pricing: &pricing,
 		Effort: row.Effort, Version: row.Version,

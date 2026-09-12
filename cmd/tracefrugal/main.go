@@ -17,6 +17,8 @@ var version = "dev"
 const help = `TraceFrugal — fewer tokens is not always a cheaper agent.
 
 Usage:
+  tracefrugal optimize [--project .]  Diagnose, apply, compare and restore local Claude settings
+  tracefrugal doctor [--claude-bin PATH] [--project .]
   tracefrugal                         Open local Claude Code + Codex usage
   tracefrugal watch [--days 7] [--no-open]
   tracefrugal watch --claude-dir PATH --codex-dir PATH --json
@@ -70,6 +72,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	if args[0] == "serve" {
 		return serve(args[1:], stderr)
+	}
+	if args[0] == "optimize" || args[0] == "doctor" || args[0] == "optimizer-receipt" {
+		return optimizeCommand(args[0], args[1:], stdin, stdout, stderr)
 	}
 	if args[0] == "claude" {
 		return claudeCommand(args[1:], stdout, stderr)

@@ -48,3 +48,5 @@ jobs:
         run: node scripts/test-native-dashboard.cjs
       - name: Check bilingual UI and session inspector
         run: node scripts/test-i18n.cjs
+      - name: Check local optimizer controls and evidence
+        run: node scripts/test-optimizer.cjs

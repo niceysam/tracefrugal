@@ -1,6 +1,10 @@
 /* English is the source catalog. Code, model identifiers and user labels stay verbatim. */
 globalThis.TraceFrugalKorean = {
-  strings: {
+    strings: {
+    "LOCAL OPTIMIZER": "내 환경 최적화",
+    "Apply a real setting. Compare. Restore.": "실제 설정에 적용하고, 비교하고, 원복하세요.",
+    "Check your installed Claude version against official docs, back up one project's settings, and try a smaller MCP result limit. A fresh-session receipt confirms activation. Compare hourly usage and answer quality, then keep or restore.": "설치된 Claude 버전과 공식 문서를 확인하고 프로젝트 설정을 백업한 뒤 MCP 결과 제한을 낮춰 봅니다. 새 세션에서 적용값을 확인하고, 시간별 사용량과 답변 품질을 비교해 유지하거나 원복합니다.",
+    "Local optimizer setup and verified versions →": "로컬 최적화 사용법과 검증된 버전 →",
     "TraceFrugal — Understand and reduce your AI context": "TraceFrugal — AI 사용량을 이해하고 컨텍스트 줄이기",
     "TraceFrugal — Your AI cost cockpit": "TraceFrugal — AI 비용과 최적화 대시보드",
     "Skip to dashboard": "대시보드로 건너뛰기",

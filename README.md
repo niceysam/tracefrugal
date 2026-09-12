@@ -26,6 +26,30 @@ You don't need a different LLM.
 
 **One Go binary. No runtime dependencies. No API key. No telemetry.**
 
+## Optimize your own Claude — not just a chart
+
+```sh
+tracefrugal optimize --project /path/to/your/project
+```
+
+**Check CLI version & official docs → Apply → Work normally → Compare → Keep or restore.**
+
+The local app backs up your project settings, lowers Claude's native large-MCP
+result threshold, and verifies the effective setting when a fresh session starts.
+Compare hourly input, cache, output, call counts and answer satisfaction.
+Restore recreates the original file; reapply starts a new trial with retained history.
+The browser is the local control panel. No hosted service receives your data.
+
+**Experimental, version-gated:** currently reviewed for Claude Code **2.1.268**.
+Other versions stay diagnostic-only. No model or permission changes. Small results
+may be unaffected; additional retrieval can make a task more expensive or worse.
+See the **[real CLI test results](docs/optimizer-validation.md)**, including failures.
+These bounded tests are not a day of developer productivity evidence.
+
+[Start here →](docs/local-optimizer.md) · [한국어 사용법 →](docs/local-optimizer.ko.md)
+
+[![Local optimizer: preview the exact setting, back up, apply or reapply](assets/optimizer-preview.png)](docs/local-optimizer.md)
+
 ## See it before installing
 
 **[Open the interactive dashboard](https://niceysam.github.io/tracefrugal/)** — no install, sign-up, or API key.

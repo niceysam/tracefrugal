@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-12",
+  "cli_version": "2.1.268",
+  "platform": "macOS arm64",
+  "provider": "Bedrock",
+  "model": "global.anthropic.claude-opus-5[1m]",
+  "fixture_sha256": "a0bb4eea8a8699a099f65734e4f26b3089e58dad9739e91cf089d0a74131296c",
+  "native_import_matches_cli_root_usage": true,
+  "sessions": 7,
+  "model_responses": 19,
+  "tokens": {
+    "input": 38,
+    "cached_input": 92193,
+    "cache_write": 39892,
+    "cache_write_1h": 0,
+    "output": 3821
+  },
+  "restore_removed_created_settings": true,
+  "not_included": "Provider invoices, day-long productivity, auxiliary modelUsage costs, other platforms or models."
+}

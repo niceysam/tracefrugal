@@ -34,14 +34,14 @@ func TestImportDedupeAndRefresh(t *testing.T) {
 	content += "broken\n{"
 	write(t, path, content)
 	write(t, filepath.Join(root, "projects", "project", "session", "subagents", "agent.jsonl"), fixture("msg2", "session1", now.Add(time.Minute), 200))
-	write(t, filepath.Join(root, "projects", "project", "copy.jsonl"), fixture("msg1", "fork", now.Add(time.Hour), 100))
+	write(t, filepath.Join(root, "projects", "project", "copy.jsonl"), strings.ReplaceAll(fixture("msg1", "fork", now.Add(time.Hour), 100), "/private/example-project", "/other/example-project"))
 	write(t, filepath.Join(root, "projects", "project", "old.orphaned-date.jsonl"), fixture("old", "old", now, 999))
 	var reader Reader
 	requests, h, err := reader.Read(root)
 	if err != nil || len(requests) != 2 || h.Duplicates != 2 || h.Invalid != 1 || h.Partial != 1 {
 		t.Fatalf("read: %d %+v %v", len(requests), h, err)
 	}
-	if requests[0].Tokens.Output != 100 || !requests[1].Subagent || requests[0].Session != requests[1].Session || requests[0].Time != now {
+	if requests[0].Tokens.Output != 100 || !requests[1].Subagent || requests[0].Session != requests[1].Session || requests[0].Time != now || requests[0].ProjectID != hash(filepath.Clean("/private/example-project")) {
 		t.Fatalf("dedupe or ownership incorrect: %+v", requests)
 	}
 	report := Build(requests, h, now.Add(-time.Hour), now.Add(2*time.Hour))

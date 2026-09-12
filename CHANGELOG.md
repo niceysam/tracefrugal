@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0
+
+- Local Claude optimizer: CLI/version and fixed official-document checks, project setting preview and one-click apply.
+- Native MCP result limit trial with a real SessionStart receipt; exact project/session/version attribution.
+- Private before/after snapshots, recoverable changes, external-edit protection and byte-exact restore.
+- Hourly input/cache/output/cost comparison, optional satisfaction, explicit keep decision, restore and independent reapply history.
+- English/Korean control panel, visible missing-data states, public usage guide and reproducible fixture.
+- Real CLI evidence: seven sessions / 19 responses reconciled in every token category; failures and cache/timing tradeoffs published.
+- Recipe remains experimental and restricted to reviewed Claude Code 2.1.268. No general savings or day-long productivity claim.
+
 ## 0.7.0
 
 - English/Korean dashboards, remembered language choice, direct language URLs and Korean README/guide.

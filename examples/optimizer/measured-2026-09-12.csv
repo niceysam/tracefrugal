@@ -1,0 +1,8 @@
+run,model_responses,input,cached_input,cache_write,cache_write_1h,output,total_input,exact_answer_pass,seconds,cli_list_cost_usd
+baseline,4,8,14632,6203,0,1741,20843,False,32.82,0.09559475
+baseline-v2,2,4,5394,9841,0,160,15239,True,9.88,0.07434325
+optimized-v2,2,4,10788,4449,0,170,15241,True,11.03,0.04359025
+baseline-v3,2,4,10788,7889,0,296,18681,True,12.18,0.06824025
+optimized-v3,4,8,23422,1814,0,672,25244,False,21.85,0.0459835
+optimized-v4,3,6,16349,1811,0,544,18166,True,17.33,0.039223249999999994
+restored-v4,2,4,10820,7885,0,238,18709,True,10.85,0.06676125
