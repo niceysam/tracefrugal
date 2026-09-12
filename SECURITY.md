@@ -25,3 +25,14 @@ Keep private traces outside the repository. `/private/` and `/runs/` are ignored
 For a security vulnerability, use this repository's private vulnerability reporting feature when available. Do not place secrets or private traces in a public issue. General accounting mistakes can be reported publicly with synthetic data.
 
 Only the latest released version is supported during the initial 0.x series.
+# Session inspection and language
+
+Session aliases are saved only in browser local storage for the current
+origin. They are never written to transcripts or sent to a remote service.
+Language catalogs ship with the binary and public site; no translation API
+receives usage data. Model/tool IDs and code remain literal.
+
+The session inspector's JSON export explicitly includes aggregates, hashed
+session ID, timestamps, models, percentiles and price groups. It excludes
+project names, local aliases, raw timelines and tool/prompt bodies. This is
+not the same export as the CLI report; review model IDs and times before sharing.

@@ -1,5 +1,9 @@
 # TraceFrugal
 
+[English](README.md) · **[한국어](README.ko.md)** ·
+[English dashboard](https://niceysam.github.io/tracefrugal/?lang=en) ·
+[한국어 대시보드](https://niceysam.github.io/tracefrugal/?lang=ko)
+
 ### Understand large AI inputs. Try smaller context. Keep useful answers.
 
 <p><a href="https://niceysam.github.io/tracefrugal/"><strong>Open the dashboard →</strong></a> · <a href="https://github.com/niceysam/tracefrugal/releases/latest">Download the local app</a> · <a href="docs/providers.md">Provider support</a></p>
@@ -71,6 +75,14 @@ the downloaded binary in Privacy & Security; releases are not notarized.
 | Were the answers still useful? | Your before/after answer and reasoning satisfaction, rated 1–5 |
 | Can I go back? | Remove the trial rule, with external-edit protection; history stays |
 | Can it really reduce tool results? | Opt-in read-only MCP result packing, exact recall, hourly receipts and stop |
+| Which session is this? | Distinct session IDs, local names, models, observed activity and search |
+| How was this dollar amount calculated? | Per-model token × rate tables with explicit reasons for unpriced data |
+| What can a developer investigate? | Input P50/P95/max, main/subagent counts, side-by-side sessions and aggregate JSON export |
+
+Both dashboards support English and Korean offline. Open **My question was
+short. Why is input so large?** for a visual explanation of how tool results
+and retained answers become input again.
+[Session inspector and cost guide →](docs/session-inspector.md)
 
 **Honest boundaries:** dollars are dated list-price estimates, not subscription
 bills. Unknown pricing stays visibly unpriced. A lower hourly total is not proof

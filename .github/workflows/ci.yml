@@ -46,3 +46,5 @@ jobs:
         run: node scripts/test-claude-dashboard.cjs
       - name: Check mixed-source and MCP packing dashboard
         run: node scripts/test-native-dashboard.cjs
+      - name: Check bilingual UI and session inspector
+        run: node scripts/test-i18n.cjs

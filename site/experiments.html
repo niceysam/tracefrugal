@@ -9,13 +9,14 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="dashboard.css">
   <script id="bootstrap" type="application/json">{"mode":"demo"}</script>
+  <script src="i18n-ko.js" defer></script><script src="i18n.js" defer></script>
   <script src="dashboard.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to dashboard</a>
 <header class="topbar">
   <a class="brand" href="./"><span class="logo" aria-hidden="true">t↘</span>TraceFrugal</a>
-  <div class="top-actions"><span id="source-badge" class="pill">Loading</span><a href="https://github.com/niceysam/tracefrugal" target="_blank" rel="noreferrer">GitHub ↗</a></div>
+  <div class="top-actions"><label class="language-picker"><span>Language</span><select data-language aria-label="Language"><option value="en" data-no-i18n>English</option><option value="ko" data-no-i18n>한국어</option></select></label><span id="source-badge" class="pill">Loading</span><a href="https://github.com/niceysam/tracefrugal" target="_blank" rel="noreferrer">GitHub ↗</a></div>
 </header>
 <div class="layout">
   <aside class="sidebar">

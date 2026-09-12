@@ -1,30 +1,30 @@
-TraceFrugal v0.6.0 brings **Claude Code + Codex visibility and actual MCP result packing**.
+TraceFrugal v0.7.0 makes sessions and costs understandable in **English and Korean**.
 
-Run `./tracefrugal` (Windows: `.\tracefrugal.exe`). One local Go binary opens
-your browser, discovers local stores, and shows their usage and coverage.
+[English dashboard](https://niceysam.github.io/tracefrugal/?lang=en) ·
+[한국어 대시보드](https://niceysam.github.io/tracefrugal/?lang=ko) ·
+[한국어 사용 안내](https://github.com/niceysam/tracefrugal/blob/main/README.ko.md)
 
-[Interactive sample](https://niceysam.github.io/tracefrugal/) ·
-[Native setup](https://github.com/niceysam/tracefrugal/blob/main/docs/native-usage.md) ·
-[MCP packing](https://github.com/niceysam/tracefrugal/blob/main/docs/mcp-pack.md)
+* Distinguish sessions with stable short IDs, models, observed dates and local names.
+* Inspect input median, P95, maximum and main/subagent response counts across the selected period.
+* See how each token category and effective model rate contributes to estimated dollars.
+* See why a record is unpriced; unknown costs are never presented as zero.
+* Compare sessions and export aggregate metadata without project names or raw events.
+* Explore how short questions lead to repeated input with a diagram and request slider.
+* Switch both native and API dashboards between English and Korean, entirely offline.
 
-* Multiple local Claude/Codex stores, including isolated home-directory profiles.
-* Per-store freshness, coverage gaps, source filters and copied-response deduplication.
-* Codex request receipts preferred over cumulative counters; labeled legacy fallback.
-* Separate reasoning-token visibility: already included in output, never a quality score.
-* Context, MCP discovery, tool-result and round-trip recommendations with evidence limits.
-* Opt-in stdio MCP proxy: allowlist + read-only hint, private archives, exact Unicode recall.
-* Hourly result-byte graph including recall traffic, satisfaction history and Undo.
-* Enforced expiry at 24 hours or sooner; restarting never extends the trial.
-* Existing scoped Claude advisory rules and API task-outcome gates remain available.
+Run `./tracefrugal` on macOS/Linux, or `.\tracefrugal.exe` on Windows.
+The browser opens with local Claude Code and Codex usage. Existing 24-hour
+context trials, satisfaction history and opt-in MCP packing remain available.
 
-Native Codex costs remain unpriced. Bytes are not tokens or dollars. Neither
-usage nor satisfaction alone proves a causal saving. The proxy cannot rewrite
-host history or unload schemas. Actual archive contents stay private.
+**한국어:** 같은 프로젝트의 세션을 구분하고, 입력·캐시·출력별 비용 계산식을
+확인할 수 있습니다. 세션 이름 지정·검색·P95 입력 분석·다른 세션과 비교를
+추가했습니다. 화면 위에서 한국어를 선택하세요. 짧은 질문에도 누적 입력이
+커지는 이유를 그림과 슬라이더로 설명합니다.
 
-Tested with synthetic native logs and a real child-process stdio MCP fixture,
-including Unicode recall, deduplication, counter resets, error preservation,
-expiry, stop and scoped local controls. No paid model call or real 24-hour
-savings result is claimed.
+Prices use the existing dated standard list-rate book, not invoices or
+subscription bills. Native Codex costs remain unpriced. Different-session
+comparisons do not establish causal savings or equal quality. Public samples
+are synthetic; no real 24-hour savings claim is made. Model IDs, code and
+user-provided names stay literal in both languages.
 
-The public demo is synthetic. Verify downloads with `checksums.txt`.
-macOS releases are not notarized.
+Verify downloads with `checksums.txt`. macOS releases are not notarized.

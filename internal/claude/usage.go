@@ -32,6 +32,7 @@ type Request struct {
 	Time       time.Time     `json:"time"`
 	Tokens     ledger.Tokens `json:"tokens"`
 	Cost       *float64      `json:"cost"`
+	Pricing    *Pricing      `json:"pricing,omitempty"`
 	Effort     string        `json:"effort,omitempty"`
 	Version    string        `json:"-"`
 	Subagent   bool          `json:"subagent"`
@@ -272,10 +273,16 @@ func parse(line []byte, path string) (Request, bool, error) {
 	if project == "." || project == string(filepath.Separator) || len(project) > 100 {
 		project = "Project " + hash(filepath.Dir(path))[:6]
 	}
+	pricing := priceDetails(row.Message.Model, tokens, ttlKnown, u.Speed, u.Geo)
+	var cost *float64
+	if pricing.USD != nil {
+		value := pricing.USD.Total()
+		cost = &value
+	}
 	return Request{
 		ID: hash(row.Message.ID), Session: hash(row.Session), Project: project,
 		Model: row.Message.Model, Time: when, Tokens: tokens,
-		Cost:   price(row.Message.Model, tokens, ttlKnown, u.Speed, u.Geo),
+		Cost: cost, Pricing: &pricing,
 		Effort: row.Effort, Version: row.Version,
 		Subagent: strings.Contains(filepath.ToSlash(path), "/subagents/"),
 	}, false, nil

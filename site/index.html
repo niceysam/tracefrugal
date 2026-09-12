@@ -8,11 +8,12 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="dashboard.css"><link rel="stylesheet" href="claude.css">
   <script id="bootstrap" type="application/json">{"mode":"native-demo"}</script>
-  <script src="claude.js" defer></script>
+  <script src="i18n-ko.js" defer></script><script src="i18n.js" defer></script>
+  <script src="inspector.js" defer></script><script src="claude.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to dashboard</a>
-<header class="topbar"><a class="brand" href="./"><span class="logo" aria-hidden="true">t↘</span>TraceFrugal</a><div class="top-actions"><span id="source" class="pill">Loading local usage</span><a href="https://github.com/niceysam/tracefrugal" target="_blank" rel="noreferrer">GitHub ↗</a></div></header>
+<header class="topbar"><a class="brand" href="./"><span class="logo" aria-hidden="true">t↘</span>TraceFrugal</a><div class="top-actions"><label class="language-picker"><span>Language</span><select data-language aria-label="Language"><option value="en" data-no-i18n>English</option><option value="ko" data-no-i18n>한국어</option></select></label><span id="source" class="pill">Loading local usage</span><a href="https://github.com/niceysam/tracefrugal" target="_blank" rel="noreferrer">GitHub ↗</a></div></header>
 <div class="layout">
   <aside class="sidebar"><p class="nav-label">CLAUDE CODE + CODEX</p><nav aria-label="Dashboard">
     <button data-view="overview" aria-current="page">◫ Overview</button>
@@ -27,11 +28,25 @@
       <article id="sources-panel" class="panel" hidden><div class="panel-heading"><div><span class="step">YOUR LOCAL SOURCES</span><h2>Choose a workspace, or see them together.</h2></div><button class="secondary" data-source="">All sources</button></div><div id="sources" class="source-grid"></div><details><summary>Data coverage &amp; available controls</summary><div id="source-details" class="table-wrap"></div><p class="small">These are log stores, not accounts. Shared launchers count once. Custom folders outside your home need an explicit path. Missing data is not zero usage. Unresolved-event counts cover all retained logs; response and legacy counts use the selected period.</p></details></article>
       <div id="empty" class="panel onboarding" hidden><h2>No recorded usage in this view.</h2><p>Check the source status above, expand the time range, or point the app at your custom log directories. Use Claude Code or Codex and keep this dashboard open.</p><pre>tracefrugal watch --claude-dir /path/to/claude --codex-dir /path/to/codex</pre><p>Cloud sessions, Claude Desktop, and ChatGPT conversations are not imported.</p><button class="primary" data-view="setup">Show setup steps</button></div>
       <div id="metrics" class="metrics"></div>
+      <article class="panel"><details id="input-explainer"><summary>My question was short. Why is input so large?</summary>
+        <h3>Input means everything the model receives for this request.</h3>
+        <div class="input-flow"><div><b>1 · Your short question</b><p>It joins instructions, available tool definitions and retained history.</p></div><span aria-hidden="true">→</span><div><b>2 · The model generates a tool call</b><p>The code and arguments it generates are output for this request.</p></div><span aria-hidden="true">→</span><div><b>3 · The tool returns a result</b><p>The result becomes input to the next model request. Retained earlier answers also become input.</p></div></div>
+        <div class="table-wrap"><table><thead><tr><th>What you see</th><th>How it is counted</th></tr></thead><tbody>
+          <tr><td>A generated answer, code or tool-call arguments</td><td>Model output when generated; input again if retained in a later request.</td></tr>
+          <tr><td>A browser Result, file contents or command result</td><td>Tool-returned data supplied as model input. It is not model-generated output.</td></tr>
+          <tr><td>A terminal diff, progress log or truncated preview</td><td>Screen formatting does not establish billed tokens. Use provider usage receipts.</td></tr>
+        </tbody></table></div>
+        <label for="replay-count">Example: model requests using the same 100k input</label> <input id="replay-count" type="range" min="1" max="20" value="10"> <strong id="replay-total"></strong>
+        <p class="small">Illustration only: 100k input per request × request count. Real context grows, is trimmed or compacted. Cache hits lower the applicable rate but still count as input; reuse is not guaranteed.</p>
+        <p>Reduce oversized tool results and unnecessary round trips first. Preserve useful cached context. These logs do not measure the exact share of your question, instructions, schemas and history.</p>
+        <a href="https://developers.openai.com/api/docs/guides/function-calling" target="_blank" rel="noreferrer">Official tool-calling flow ↗</a> · <a href="https://developers.openai.com/api/docs/guides/prompt-caching" target="_blank" rel="noreferrer">Official prompt-cache accounting ↗</a>
+      </details></article>
       <article class="panel usage-chart">
         <div class="panel-heading"><div><h2 id="chart-title">Usage over time</h2><p id="chart-caption">Recorded input, cache, and output tokens.</p></div><div class="range" role="group" aria-label="Chart units"><button data-unit="tokens" aria-pressed="true">Tokens</button><button data-unit="cost">Est. cost</button></div></div>
         <div id="chart" class="chart"></div><div id="legend" class="legend"></div>
         <details class="chart-data"><summary>Read chart values</summary><div id="chart-values" class="table-wrap"></div></details>
       </article>
+      <article id="session-inspector" class="panel" hidden></article>
       <article class="panel diagnosis"><span class="step">01 · UNDERSTAND THE INPUT</span><h2>Why so much input, and so little output?</h2><div id="diagnosis"></div><div id="tool-sources"></div></article>
       <article id="recommendations-panel" class="panel" hidden><span class="step">WHAT TO CHANGE · AND HOW TO CHECK IT</span><h2>Fix the context before changing the model.</h2><div id="recommendations" class="recommendation-grid"></div><div id="quality" class="notice"></div></article>
       <article id="packing-panel" class="panel" hidden></article>
@@ -41,6 +56,8 @@
       </div>
       <article class="panel"><span class="step">02 · TRY ONE CHANGE</span><h2>Improve the context, keep your model.</h2><p>Choose one small instruction to test. The app does not change your model or reasoning effort.</p><div id="recipes" class="recipe-grid"></div></article>
       <div class="section-heading"><div><h2>Your sessions</h2><p class="small">Choose a session to see how each request grew.</p></div><div class="session-tools"><label><input type="checkbox" id="hide-names"> Hide project names</label><label>Sort <select id="session-sort"><option value="recent">Most recent</option><option value="tokens">Most tokens</option><option value="cost">Highest known cost</option></select></label></div></div>
+      <label class="session-search" for="session-search">Find a session <input id="session-search" type="search" placeholder="Search by name, project, ID or model"></label>
+      <p class="small">Responses include tool loops and subagents. Tokens are the total processed across requests, including repeated context. Select a row for its identity, input distribution and cost formula.</p>
       <div id="sessions" class="panel table-wrap"></div>
       <p id="coverage" class="footnote"></p>
     </section>

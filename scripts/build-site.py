@@ -6,7 +6,7 @@ root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
 parser.add_argument("--check", action="store_true")
 args = parser.parse_args()
-for name in ("index.html", "claude.html", "claude.js", "claude.css", "dashboard.js", "dashboard.css", "favicon.svg"):
+for name in ("index.html", "claude.html", "claude.js", "claude.css", "dashboard.js", "dashboard.css", "favicon.svg", "i18n.js", "i18n-ko.js", "inspector.js"):
     data = (root / "internal" / "webui" / name).read_text()
     if name == "index.html":
         data = data.replace("{{.}}", '{"mode":"demo"}')

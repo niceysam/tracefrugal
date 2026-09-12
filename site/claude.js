@@ -7,12 +7,13 @@ const number = value => Number(value || 0).toLocaleString("en-US");
 const compact = value => new Intl.NumberFormat("en-US", {notation:"compact", maximumFractionDigits:1}).format(value || 0);
 const usd = value => "$" + Number(value || 0).toFixed(2);
 const tokens = t => t.input + t.cached_input + t.cache_write + t.cache_write_1h + t.output;
-const date = value => new Date(value).toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+const date = value => new Date(value).toLocaleString(globalThis.I18n?.locale || "en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
 const demo = boot.mode === "claude-demo" || boot.mode === "native-demo";
 let sourceID = "";
 const demoTrials = {};
 let demoPack;
 let state, days = 7, unit = "tokens", view = "overview", selected = "", busy = false, restoreID = "", recipeID = "", sequence = 0, sort = "recent", hideNames = false;
+let search = "", compareID = "";
 const inputTokens = s => tokens(s.tokens)-s.tokens.output;
 const per = (n,d) => d ? number(Math.round(n/d)) : "—";
 const bytes = n => n >= 1e6 ? (n/1e6).toFixed(1)+" MB" : n >= 1000 ? (n/1000).toFixed(1)+" kB" : number(Math.round(n))+" B";
@@ -30,11 +31,12 @@ function showView(name) {
 function metric(label, value, note) {
   return `<article class="metric"><span class="metric-label">${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(note)}</small></article>`;
 }
-function estimate(s) { return s.unpriced ? usd(s.known_usd) + " known" : usd(s.known_usd); }
-function project(s) { return hideNames ? "Project " + s.id.slice(0,6) : s.project; }
+function estimate(s) { return s.unpriced === s.requests && s.requests ? "Unpriced" : s.unpriced ? usd(s.known_usd) + " known" : usd(s.known_usd); }
+function project(s) { return hideNames ? "Session " + s.id.split(":").pop().slice(0,10) : s.project; }
 function activeChange() { return state?.changes.slice().reverse().find(c => ["saved","prepared"].includes(c.status)); }
 function render() {
   if (!state) return;
+  renderReplay();
   // Polling must not erase an unsaved rating or close the hourly graph.
   const drafts=Array.from(document.querySelectorAll(".rating-control select"))
     .filter(e=>e.value!==(e.querySelector("[selected]")?.value || ""))
@@ -55,6 +57,7 @@ function render() {
     metric("Output / response", compact(s.tokens.output/s.requests || 0), `${number(s.requests)} responses · ${number(state.sessions.length)} sessions`);
   renderChart();
   renderSessions();
+  renderInspector();
   renderSources();
   $("findings").innerHTML = state.findings.map(f => `<div class="finding"><h3>${esc(f.title)}</h3><p>${esc(f.detail)}</p><p>${esc(f.action)}</p>${f.session ? `<button class="text-button" data-session="${esc(f.session)}">Inspect this session →</button>` : ""}</div>`).join("") || '<p>Usage signals will appear after requests are recorded.</p>';
   const c = activeChange();
@@ -76,6 +79,22 @@ function render() {
   $("coverage").textContent = `${number(h.files)} local transcript files · ${number(h.duplicates)} repeated response blocks deduplicated · ${number(h.invalid)} invalid records · ${number(h.partial)} incomplete final lines · ${number(h.unreadable)} unreadable files · ${number(h.conflicts)} conflicting usage snapshots. ` +
     "Incomplete or missing logs can undercount usage. Prices: "+state.price_label+". Special or unknown pricing remains unpriced. Cached tokens are included in processed tokens; this is not context-window occupancy. Prompts and tool outputs are not displayed or uploaded.";
   showView(view);
+}
+function renderReplay(){
+  const count=$("replay-count");
+  if(!count)return;
+  $("replay-total").textContent=globalThis.I18n?.language==="ko"?`100,000 × ${count.value}회 = ${number(100000*Number(count.value))} 입력 토큰 처리`:`100,000 × ${count.value} = ${number(100000*Number(count.value))} input tokens processed`;
+}
+function renderInspector(){
+  const panel=$("session-inspector"), s=state.sessions.find(s=>s.id===selected);
+  if(!panel || !globalThis.TraceInspector)return;
+  panel.hidden=!s;
+  if(!s)return;
+  const field=$("session-alias"), draft=field?.dataset?.session===selected?field.value:null;
+  const focus=document.activeElement?.id==="session-alias";
+  panel.innerHTML=TraceInspector.html(s,state,hideNames,compareID);
+  const next=$("session-alias");
+  if(next){next.dataset.session=selected;if(draft!==null)next.value=draft;if(focus)next.focus();}
 }
 function renderDiagnosis() {
   const d=state.diagnostics, s=state.summary, input=inputTokens(s), share=input ? s.tokens.cached_input/input : 0;
@@ -146,8 +165,8 @@ function renderChart() {
   const session = state.sessions.find(s => s.id === selected);
   const rows = session
     ? session.timeline.slice(-60).map((r,i,a) => ({...r, start:r.time, requests:1, known_usd:r.cost ?? 0, unpriced:r.cost == null ? 1:0, label:String(session.requests-a.length+i+1)}))
-    : state.buckets.map(b => ({...b, label:days === 1 ? new Date(b.start).getUTCHours()+":00" : new Date(b.start).toLocaleDateString("en-US",{timeZone:"UTC",month:"short",day:"numeric"})}));
-  $("chart-title").textContent = session ? project(session) + " · request by request" : "Usage over time";
+    : state.buckets.map(b => ({...b, label:days === 1 ? new Date(b.start).getUTCHours()+":00" : new Date(b.start).toLocaleDateString(globalThis.I18n?.locale||"en-US",{timeZone:"UTC",month:"short",day:"numeric"})}));
+  $("chart-title").textContent = session ? (globalThis.TraceInspector?.name(session,hideNames)||project(session)) + " · request by request" : "Usage over time";
   $("chart-caption").textContent = session ? `Latest ${rows.length} displayed responses from this session. Subagents included. Repeated input is expected as a conversation grows.` : (days === 1 ? "Hourly" : "Daily")+" buckets in UTC. First and last buckets may be partial.";
   const width = Math.max(300, $("chart").clientWidth || 900), left = 57, right = 15, bottom = 216;
   const known = r => unit === "tokens" || r.unpriced === 0;
@@ -181,8 +200,9 @@ function renderChart() {
   $("chart-values").innerHTML = `<table class="readable-table"><thead><tr><th>Time</th><th>New input</th><th>Cache reads</th><th>Cache writes</th><th>Output</th><th>Est. USD</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(date(r.start))}</td><td>${number(r.tokens.input)}</td><td>${number(r.tokens.cached_input)}</td><td>${number(r.tokens.cache_write+r.tokens.cache_write_1h)}</td><td>${number(r.tokens.output)}</td><td>${esc(estimate(r))}</td></tr>`).join("")}</tbody></table>`;
 }
 function renderSessions() {
-  const sessions = state.sessions.slice().sort((a,b) => sort === "tokens" ? tokens(b.tokens)-tokens(a.tokens) : sort === "cost" ? b.known_usd-a.known_usd : new Date(b.end)-new Date(a.end));
-  $("sessions").innerHTML = sessions.length ? `<table><thead><tr><th>Project / session</th><th>Responses</th><th>Tokens</th><th>Est. cost</th></tr></thead><tbody>${sessions.map(s=>`<tr class="${s.id===selected ? "session-selected" : ""}"><td><button class="session" data-session="${esc(s.id)}">${esc(project(s))}<span class="sub">${esc(date(s.end))} · ${esc(s.id.slice(0,6))}</span></button></td><td>${number(s.requests)}</td><td>${compact(tokens(s.tokens))}</td><td>${esc(estimate(s))}${s.unpriced ? '<span class="sub">Partial price coverage</span>' : ""}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Sessions appear after Claude Code records usage.</div>';
+  const name=s=>globalThis.TraceInspector?.name(s,hideNames)||"Session "+s.id.split(":").pop().slice(0,10);
+  const sessions = state.sessions.filter(s=>[s.id,...s.models,hideNames?"":s.project,name(s)].join(" ").toLowerCase().includes(search.toLowerCase())).sort((a,b) => sort === "tokens" ? tokens(b.tokens)-tokens(a.tokens) : sort === "cost" ? b.known_usd-a.known_usd : new Date(b.end)-new Date(a.end));
+  $("sessions").innerHTML = sessions.length ? `<table><thead><tr><th>Project / session</th><th>Responses</th><th>Processed tokens</th><th>Est. cost</th></tr></thead><tbody>${sessions.map(s=>`<tr class="${s.id===selected ? "session-selected" : ""}"><td><button class="session" data-session="${esc(s.id)}"><span data-no-i18n>${esc(name(s))}</span><span class="sub" data-no-i18n>${hideNames?"":esc(s.project)+" · "}${esc(s.models.join(", "))}</span><span class="sub"><span>Last activity</span>: <span data-no-i18n>${esc(date(s.end))}</span></span></button></td><td>${number(s.requests)}</td><td>${compact(tokens(s.tokens))}</td><td>${esc(estimate(s))}${s.unpriced ? '<span class="sub">Incomplete price coverage</span>' : ""}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">No matching sessions.</div>';
 }
 function renderChanges() {
   $("change-count").textContent = state.changes.length;
@@ -275,11 +295,12 @@ function sampleNative(period, chosen) {
     {id:"sample-sandbox",name:".codex-sandbox",harness:"codex",activation:"Usage only",tool_evidence:false}
   ].map(s=>({...s,summary:zero(),health:{},status:"Observed",latest:null,legacy_requests:0,unresolved_usage_events:0,cross_source_duplicates:0}));
   r.sessions.forEach((session,i)=>{
-    const s=sources[i%sources.length]; session.source=s.id;
+    const s=sources[i%sources.length]; session.source=s.id;session.sources=[s.id];
     if(s.harness==="codex") {
       session.unpriced=session.requests;session.known_usd=0;session.models=["example-codex-model"];
       session.reasoning_output=Math.floor(session.tokens.output/3);
       session.timeline.forEach(q=>{q.cost=null;q.model="example-codex-model";});
+      session.prices=[{model:"example-codex-model",reason:"native_codex_unpriced",requests:session.requests,tokens:session.tokens,known_usd:0,unpriced:session.requests}];
     }
     add(s.summary,session); if(!s.latest || session.end>s.latest)s.latest=session.end;
   });
@@ -325,7 +346,12 @@ function sample(period) {
       const t={}; for(const k in s.tokens) t[k]=Math.floor(s.tokens[k]/s.requests)+(j<s.tokens[k]%s.requests?1:0);
       requests.push({time:new Date(new Date(start).getTime()+j*60000).toISOString(),tokens:t,cost:(t.input*3+t.cached_input*.3+t.cache_write*3.75+t.output*15)/1e6,effort:"high",model:"claude-sonnet-4-6",subagent:false});
     }
-    sessions.push({...s,id:"demo-session-"+i,project:["website","api-service","weekend-project"][i%3],start,end:start,models:["claude-sonnet-4-6"],timeline:requests});
+    const inputs=requests.map(q=>tokens(q.tokens)-q.tokens.output).sort((a,b)=>a-b);
+    const rates={input:3,cached_input:.3,cache_write:3.75,cache_write_1h:6,output:15}, charges={};
+    for(const k in rates)charges[k]=s.tokens[k]*rates[k]/1e6;
+    sessions.push({...s,id:"demo-session-"+i,project:["website","api-service","weekend-project"][i%3],start,end:requests.at(-1).time,models:["claude-sonnet-4-6"],timeline:requests,
+      stats:{input_p50:inputs[Math.ceil(inputs.length*.5)-1],input_p95:inputs[Math.ceil(inputs.length*.95)-1],input_max:inputs.at(-1),main_responses:s.requests,subagent_responses:0},
+      prices:[{...s,model:"claude-sonnet-4-6",rates,usd:charges}]});
   }
   return {mode:"claude",from:new Date(now-period*86400000).toISOString(),until:new Date(now).toISOString(),summary,buckets,sessions:sessions.reverse(),changes:[],recipes:[
     {id:"tool-results",title:"Keep large tool results out of the conversation",rule:"Use narrow file ranges, query filters, requested fields, and result limits before fetching data. Keep full artifacts locally and return relevant excerpts, counts, errors, and paths. Expand when needed. Preserve evidence and verification."},
@@ -334,6 +360,18 @@ function sample(period) {
   ],diagnostics:{human_turns:Math.max(1,Math.round(summary.requests/5)),tool_calls:87,result_bytes:840000,mcp_bytes:720000,large_results:12,repeated_calls:9,tools:[{name:"mcp__docs__search",calls:24,bytes:720000,repeated:6},{name:"Read",calls:42,bytes:90000,repeated:1},{name:"Bash",calls:21,bytes:30000,repeated:2}]},price_label:"SYNTHETIC usage at example standard list rates",health:{files:n,duplicates:34,invalid:0,partial:0,unreadable:0,conflicts:0},findings:[{title:"Start with a session you recognize",detail:"Select website or api-service below to see individual requests. Toggle Tokens and Est. cost.",action:"In the local app these are your recorded sessions. The sample numbers here are illustrative, not measured savings."}]};
 }
 document.addEventListener("click", event => {
+  if(event.target.closest("#save-session-name")){
+    const saved=globalThis.TraceInspector?.saveName(selected,$("session-alias").value);
+    notice(saved?"Session name saved in this browser.":"Browser storage is unavailable. The name was not saved.",!saved);
+    renderSessions();renderInspector();
+  }
+  if(event.target.closest("#export-session")){
+    const session=state.sessions.find(s=>s.id===selected);
+    if(session && globalThis.TraceInspector){
+      const url=URL.createObjectURL(new Blob([JSON.stringify(TraceInspector.exportData(session,state),null,2)],{type:"application/json"}));
+      const link=document.createElement("a");link.href=url;link.download="tracefrugal-session.json";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    }
+  }
   if(event.target.closest("[data-pack-stop]"))packingAction("pack-stop");
   if(event.target.closest("[data-pack-rate]"))packingAction("pack-rate");
   const source=event.target.closest("[data-source]");
@@ -352,6 +390,9 @@ document.addEventListener("click", event => {
 $("apply-trial").addEventListener("click",()=>{const rating=Number($("before-rating").value);if(rating<1||rating>5){$("before-rating").focus();return;}$("trial-dialog").close();change("try","",rating);});
 $("restore-trial").addEventListener("click",()=>{$("restore-dialog").close();change("restore");});
 $("session-sort").addEventListener("change",event=>{sort=event.target.value;renderSessions();});
+$("session-search")?.addEventListener("input",event=>{search=event.target.value;renderSessions();});
+$("replay-count")?.addEventListener("input",renderReplay);
+document.addEventListener("change",event=>{if(event.target.id==="compare-session"){compareID=event.target.value;renderInspector();}});
 $("hide-names").addEventListener("change",event=>{hideNames=event.target.checked;render();});
 const windows=typeof navigator !== "undefined" && /Win/.test(navigator.platform);
 $("launch-command").textContent=windows ? ".\\tracefrugal.exe" : "./tracefrugal";
@@ -360,5 +401,6 @@ $("copy-command").addEventListener("click",async()=>{
   catch { notice("Select and copy the command shown above."); }
 });
 if(typeof window !== "undefined") window.addEventListener("resize",renderChart);
+if(typeof window !== "undefined") window.addEventListener("tracefrugal:language",render);
 refresh();
 if(!demo) setInterval(()=>{if(!busy && !$("trial-dialog").open && !$("restore-dialog").open) refresh();},30000);

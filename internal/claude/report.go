@@ -36,13 +36,92 @@ type Bucket struct {
 }
 
 type Session struct {
-	ID       string    `json:"id"`
-	Project  string    `json:"project"`
-	Start    time.Time `json:"start"`
-	End      time.Time `json:"end"`
-	Models   []string  `json:"models"`
-	Timeline []Request `json:"timeline"`
+	ID       string       `json:"id"`
+	Project  string       `json:"project"`
+	Start    time.Time    `json:"start"`
+	End      time.Time    `json:"end"`
+	Models   []string     `json:"models"`
+	Timeline []Request    `json:"timeline"`
+	Sources  []string     `json:"sources"`
+	Stats    SessionStats `json:"stats"`
+	Prices   []PriceGroup `json:"prices"`
 	Summary
+}
+
+type SessionStats struct {
+	InputP50 int64 `json:"input_p50"`
+	InputP95 int64 `json:"input_p95"`
+	InputMax int64 `json:"input_max"`
+	Main     int   `json:"main_responses"`
+	Subagent int   `json:"subagent_responses"`
+}
+
+// PriceGroup is computed from every selected response, before the UI timeline
+// is capped. Never infer rates from token totals or combine differing rates.
+type PriceGroup struct {
+	Model  string   `json:"model"`
+	Reason string   `json:"reason,omitempty"`
+	Rates  *Amounts `json:"rates,omitempty"`
+	USD    Amounts  `json:"usd"`
+	Summary
+}
+
+func inspectSession(s *Session) {
+	inputs := make([]int64, 0, len(s.Timeline))
+	s.Sources, s.Prices = []string{}, []PriceGroup{}
+	for _, q := range s.Timeline {
+		inputs = append(inputs, total(q.Tokens)-q.Tokens.Output)
+		if q.Subagent {
+			s.Stats.Subagent++
+		} else {
+			s.Stats.Main++
+		}
+		if q.Source != "" {
+			found := false
+			for _, source := range s.Sources {
+				found = found || source == q.Source
+			}
+			if !found {
+				s.Sources = append(s.Sources, q.Source)
+			}
+		}
+		p := q.Pricing
+		if p == nil {
+			reason := "price_breakdown_unavailable"
+			if q.Harness == "codex" {
+				reason = "native_codex_unpriced"
+			}
+			p = &Pricing{Reason: reason}
+		}
+		index := -1
+		for i, g := range s.Prices {
+			sameRates := g.Rates == nil && p.Rates == nil || g.Rates != nil && p.Rates != nil && *g.Rates == *p.Rates
+			if g.Model == q.Model && g.Reason == p.Reason && sameRates {
+				index = i
+				break
+			}
+		}
+		if index < 0 {
+			s.Prices = append(s.Prices, PriceGroup{Model: q.Model, Reason: p.Reason, Rates: p.Rates})
+			index = len(s.Prices) - 1
+		}
+		g := &s.Prices[index]
+		g.Add(q)
+		if p.USD != nil {
+			g.USD.Input += p.USD.Input
+			g.USD.CachedInput += p.USD.CachedInput
+			g.USD.CacheWrite += p.USD.CacheWrite
+			g.USD.CacheWrite1h += p.USD.CacheWrite1h
+			g.USD.Output += p.USD.Output
+		}
+	}
+	sort.Slice(inputs, func(i, j int) bool { return inputs[i] < inputs[j] })
+	if n := len(inputs); n > 0 {
+		// Nearest-rank percentiles: rank = ceil(p*n).
+		s.Stats.InputP50 = inputs[(n+1)/2-1]
+		s.Stats.InputP95 = inputs[(95*n+99)/100-1]
+		s.Stats.InputMax = inputs[n-1]
+	}
 }
 
 type Finding struct {
@@ -111,6 +190,7 @@ func Build(requests []Request, health Health, from, until time.Time) Report {
 		}
 	}
 	for _, s := range sessions {
+		inspectSession(s)
 		r.Sessions = append(r.Sessions, *s)
 	}
 	sort.Slice(r.Sessions, func(i, j int) bool {

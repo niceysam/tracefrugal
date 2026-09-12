@@ -1,5 +1,8 @@
 # Claude Code + Codex, in one local view
 
+[한국어 시작 안내](../README.ko.md) ·
+[Session identity, input percentiles and cost formulas](session-inspector.md)
+
 Run `tracefrugal` and select a source card. Use **All sources** for a combined
 graph, **24 hours / 7 days / 30 days** for the period, and a session row for
 request-by-request input, cache and output.

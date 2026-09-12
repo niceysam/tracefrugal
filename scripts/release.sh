@@ -23,12 +23,12 @@ for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 wi
   CGO_ENABLED=0 GOOS="$target_os" GOARCH="$target_arch" go build -trimpath \
     -ldflags "-s -w -X main.version=$release_version" \
     -o "$staging_dir/$binary_name" ./cmd/tracefrugal
-  cp LICENSE README.md "$staging_dir/"
+  cp LICENSE README.md README.ko.md "$staging_dir/"
   if [[ "$target_os" == windows ]]; then
     archive_path="$PWD/dist/$archive_name.zip"
-    (cd "$staging_dir" && zip -q "$archive_path" "$binary_name" LICENSE README.md)
+    (cd "$staging_dir" && zip -q "$archive_path" "$binary_name" LICENSE README.md README.ko.md)
   else
-    tar -czf "dist/$archive_name.tar.gz" -C "$staging_dir" "$binary_name" LICENSE README.md
+    tar -czf "dist/$archive_name.tar.gz" -C "$staging_dir" "$binary_name" LICENSE README.md README.ko.md
   fi
   rm -r "$staging_dir"
 done

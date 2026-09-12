@@ -106,7 +106,7 @@ function renderTrend() {
 const statusTitle = {applied:"Lower-cost settings applied",rejected:"Trial rejected · settings kept",rolled_back:"Previous settings restored",resumed:"Experiments allowed again",error:"Trial could not finish",running:"Evaluation in progress",applying:"Applying candidate",recommended:"Lower-cost candidate found",unchanged:"No settings change"};
 function eventRow(e, full = false) {
   const cap = e.before_output_cap != null && e.after_output_cap != null ? `Output limit: ${num(e.before_output_cap)} → ${num(e.after_output_cap)} tokens` : e.action === "resume" ? "Pause removed. This does not start a scheduler." : e.message;
-  const when = new Date(e.started_at).toLocaleString("en-US", {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
+  const when = new Date(e.started_at).toLocaleString(globalThis.I18n?.locale || "en-US", {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
   const cost = finite(e.candidate_cost_usd) ? money(e.candidate_cost_usd) : e.status === "rolled_back" ? "Restored" : "—";
   const change = e.cost_per_success_change_percent;
   let row = `<div class="history-row"><span class="event-icon ${esc(e.status)}" aria-hidden="true">${e.status === "applied" ? "✓" : e.status === "rejected" || e.status === "error" ? "×" : "↺"}</span><div class="event-body"><strong>${esc(statusTitle[e.status] || e.status)}</strong><p>${esc(cap)}</p></div><span class="event-badge">${esc(when)}</span><div class="event-cost">${esc(cost)}<small>${change == null ? "Recorded event" : esc(pct(change)) + " / success"}</small></div></div>`;
@@ -328,5 +328,6 @@ $("report-file").addEventListener("change", async event => {
 });
 provider("openai");
 if (typeof window !== "undefined") window.addEventListener("resize", () => { if (state) renderTrend(); });
+if (typeof window !== "undefined") window.addEventListener("tracefrugal:language", () => { if(state) render(); });
 if (boot.mode === "demo") resetDemo();
 else { refresh(); setInterval(() => { if (!busy && !$("undo-dialog").open) refresh(); }, 3000); }

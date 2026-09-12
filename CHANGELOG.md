@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0
+
+- English/Korean dashboards, remembered language choice, direct language URLs and Korean README/guide.
+- Distinct session IDs, local browser names, search, observed dates and source/model provenance.
+- Full-period input P50/P95/max and main/subagent counts before timeline truncation.
+- Per-model and effective-rate cost tables with disjoint input/cache/output components and unpriced reasons.
+- Session comparison and aggregate-only JSON export excluding project names, aliases and raw timelines.
+- Interactive explanation of short questions, repeated context, tool-returned input and model output.
+- Existing prices remain a dated standard-rate estimate; native Codex remains unpriced.
+
 ## 0.6.0
 
 * Native Claude Code + Codex source discovery, coverage, filtering and deduplication.

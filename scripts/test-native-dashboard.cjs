@@ -4,13 +4,14 @@ const vm = require("node:vm");
 const elements = new Map();
 function element(id) {
   if(!elements.has(id))elements.set(id,{
-    textContent:id==="bootstrap"?'{"mode":"native-demo"}':"",innerHTML:"",value:"",hidden:false,
+    textContent:id==="bootstrap"?'{"mode":"native-demo"}':"",innerHTML:"",value:"",hidden:false,dataset:{},
     classList:{toggle(){}},addEventListener(){},setAttribute(){},removeAttribute(){},
     showModal(){this.open=true},close(){this.open=false}
   });
   return elements.get(id);
 }
 const context=vm.createContext({document:{getElementById:element,querySelectorAll:()=>[],addEventListener(){}},setInterval(){},URLSearchParams,console});
+vm.runInContext(fs.readFileSync("internal/webui/inspector.js","utf8"),context);
 vm.runInContext(fs.readFileSync("internal/webui/claude.js","utf8"),context);
 const run=code=>vm.runInContext(code,context);
 async function test(){
@@ -22,10 +23,23 @@ async function test(){
   assert.ok(element("quality").innerHTML.includes("already included in output"));
   assert.ok(element("packing-history").innerHTML.includes("Hour 24"));
   assert.ok(element("packing-panel").innerHTML.includes("not measured token or dollar savings"));
+  run('selected=state.sessions.find(s=>s.source==="sample-claude").id;render()');
+  assert.ok(element("session-inspector").innerHTML.includes("USD / 1M tokens"));
+  assert.ok(element("session-inspector").innerHTML.includes("Input P95"));
+  assert.ok(element("chart-title").textContent.includes(run("selected")));
+  run('compareID=state.sessions.find(s=>s.source==="sample-codex").id;renderInspector()');
+  assert.ok(element("session-inspector").innerHTML.includes("This comparison does not prove savings"));
+  run('search="no-match-at-all";renderSessions()');
+  assert.ok(element("sessions").innerHTML.includes("No matching sessions"));
+  run('search="";selected=""');
   run('sourceID="sample-codex"');
   await run("refresh()");
   assert.equal(run("state.recipes.length"),0);
   assert.equal(run("state.summary.unpriced"),run("state.summary.requests"));
+  run('selected=state.sessions[0].id;render()');
+  assert.ok(element("session-inspector").innerHTML.includes("Native Codex pricing is not established."));
+  assert.equal(run("estimate(state.summary)"),"Unpriced");
+  run('selected=""');
   assert.equal(run("state.diagnostics.human_turns"),0);
   assert.ok(element("trial-card").innerHTML.includes("read-only"));
   run("unit='cost';renderChart()");
