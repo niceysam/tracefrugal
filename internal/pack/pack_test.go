@@ -81,6 +81,16 @@ func TestExactUnicodeRecallAndAccounting(t *testing.T) {
 func TestPreserveSemanticsAndFailOpen(t *testing.T) {
 	e := engine(t)
 	raw := textResult(strings.Repeat("data", 4000))
+	var large map[string]any
+	json.Unmarshal(raw, &large)
+	large["isError"] = true
+	largeError, _ := json.Marshal(large)
+	delete(large, "isError")
+	large["structuredContent"] = map[string]string{"status": "preserve"}
+	largeStructured, _ := json.Marshal(large)
+	delete(large, "structuredContent")
+	large["_meta"] = map[string]string{"status": "preserve"}
+	largeMeta, _ := json.Marshal(large)
 	for _, test := range []struct {
 		tool string
 		hint bool
@@ -90,6 +100,7 @@ func TestPreserveSemanticsAndFailOpen(t *testing.T) {
 		{"search", true, textResult("small")},
 		{"search", true, json.RawMessage(`{"isError":true,"content":[{"type":"text","text":"error"}]}`)},
 		{"search", true, json.RawMessage(`{"structuredContent":{"secret":"keep"},"content":[{"type":"text","text":"text"}]}`)},
+		{"search", true, largeError}, {"search", true, largeStructured}, {"search", true, largeMeta},
 	} {
 		if !bytes.Equal(e.Transform(test.tool, test.hint, test.body), test.body) {
 			t.Fatal("changed ineligible result")

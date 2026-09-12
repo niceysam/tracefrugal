@@ -39,7 +39,7 @@ The same dashboard is embedded in the Go binary. Local history survives reloads 
 
 ## Supported sources
 
-OpenAI Responses and Anthropic Messages final usage are supported by the recorder/normalizer. Other providers can emit the documented normalized trace format. Claude Code now has a separate [native local dashboard](claude-code.md). Codex, ChatGPT, and Claude Desktop are not automatically attached.
+OpenAI Responses and Anthropic Messages final usage are supported by the recorder/normalizer. Other providers can emit the documented normalized trace format. Claude Code and Codex have a separate [native local dashboard](native-usage.md). ChatGPT and Claude Desktop are not automatically attached.
 
 ## Development
 
