@@ -8,7 +8,10 @@ const compact = value => new Intl.NumberFormat("en-US", {notation:"compact", max
 const usd = value => "$" + Number(value || 0).toFixed(2);
 const tokens = t => t.input + t.cached_input + t.cache_write + t.cache_write_1h + t.output;
 const date = value => new Date(value).toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
-const demo = boot.mode === "claude-demo";
+const demo = boot.mode === "claude-demo" || boot.mode === "native-demo";
+let sourceID = "";
+const demoTrials = {};
+let demoPack;
 let state, days = 7, unit = "tokens", view = "overview", selected = "", busy = false, restoreID = "", recipeID = "", sequence = 0, sort = "recent", hideNames = false;
 const inputTokens = s => tokens(s.tokens)-s.tokens.output;
 const per = (n,d) => d ? number(Math.round(n/d)) : "—";
@@ -39,7 +42,7 @@ function render() {
   const expanded=Array.from(document.querySelectorAll("#changes-list details")).map(e=>e.open);
   const focusID=document.activeElement?.id;
   const s = state.summary, total = tokens(s.tokens), input = total-s.tokens.output;
-  $("source").textContent = demo ? "Sample workspace" : "Claude Code · local";
+  $("source").textContent = demo ? "Sample workspace" : state.sources ? "Claude Code + Codex · local" : "Claude Code · local";
   $("source").classList.toggle("demo", demo);
   $("demo-banner").hidden = !demo;
   $("freshness").textContent = demo ? "Explore sample sessions. Install to see your own usage automatically." : `Last read ${date(state.until)} · updates every 30 seconds · this computer only`;
@@ -52,13 +55,20 @@ function render() {
     metric("Output / response", compact(s.tokens.output/s.requests || 0), `${number(s.requests)} responses · ${number(state.sessions.length)} sessions`);
   renderChart();
   renderSessions();
+  renderSources();
   $("findings").innerHTML = state.findings.map(f => `<div class="finding"><h3>${esc(f.title)}</h3><p>${esc(f.detail)}</p><p>${esc(f.action)}</p>${f.session ? `<button class="text-button" data-session="${esc(f.session)}">Inspect this session →</button>` : ""}</div>`).join("") || '<p>Usage signals will appear after requests are recorded.</p>';
   const c = activeChange();
   $("trial-card").innerHTML = c
     ? `<span class="step">CONTEXT TRIAL</span><h2>${c.hours.length===24 ? "Your day is ready to review." : "One change. Watch what happens."}</h2><p>${esc(recipe(c.recipe)?.title || c.recipe)}</p><p>${c.hours.length} of 24 complete hours recorded. ${c.rule_state==="present" ? "The rule file is present; verify it is loaded in your next Claude session." : "The trial rule is "+esc(c.rule_state || "unverified")+". Check it before interpreting results."}</p><div class="intro-cta"><button class="primary" data-view="changes">Compare tokens &amp; satisfaction →</button><button class="text-button" data-restore="${esc(c.id)}">Undo change</button></div>`
     : `<span class="step">A PRACTICAL EXPERIMENT</span><h2>Try one rule for a day.</h2><p>Start with the biggest observed source below. Rate the answers you get today, add a small context instruction, and compare tomorrow. Undo it if the answers become less useful.</p><p class="small">No model calls are made by TraceFrugal. The baseline is the previous 24 hours, across projects in this Claude config directory.</p>`;
   renderDiagnosis();
+  renderRecommendations();
+  if(state.sources && !state.recipes.length) {
+    $("trial-card").innerHTML='<span class="step">CHOOSE A SOURCE BEFORE A TRIAL</span><h2>See exactly where a change applies.</h2><p>Select one Claude source above to preview an advisory rule and compare satisfaction over 24 hours. Codex usage is read-only in this release.</p><p>For enforced result packing, connect the opt-in MCP proxy. Its journal records actual transformations and recall traffic.</p><a href="https://github.com/niceysam/tracefrugal/blob/main/docs/mcp-pack.md" target="_blank" rel="noreferrer">Set up MCP result packing →</a>';
+    $("recipes").innerHTML='<p>Select a Claude source to preview a rule. Recommendations above apply to both harnesses where their capabilities allow it.</p>';
+  }
   renderChanges();
+  renderPacking();
   drafts.forEach(([id,value])=>{if($(id))$(id).value=value;});
   document.querySelectorAll("#changes-list details").forEach((e,i)=>{e.open=expanded[i] || false;});
   if(focusID && focusID.startsWith("rating-")) $(focusID)?.focus({preventScroll:true});
@@ -69,7 +79,13 @@ function render() {
 }
 function renderDiagnosis() {
   const d=state.diagnostics, s=state.summary, input=inputTokens(s), share=input ? s.tokens.cached_input/input : 0;
-  $("diagnosis").innerHTML=`<div class="diagnosis-grid"><div><h3>${per(input,s.requests)} input → ${per(s.tokens.output,s.requests)} output</h3><p>Average tokens per recorded response. Input includes instructions, prior conversation, tool definitions and results. The same context may be processed on many requests, even when the answer is short.</p></div><div><h3>${(share*100).toFixed(1)}% of input was cached</h3><p>${share>=.7 ? "Most input was reused from cache. That is a lower-priced read, not evidence of waste. A large conversation can still be replayed many times." : "Much of the input was newly processed or written to cache. New sessions, changing prefixes, compaction, or expiry can explain this; usage logs alone do not prove which."}</p></div><div><h3>${per(s.requests,d.human_turns)} responses per user turn</h3><p>${number(d.human_turns)} observed main-session user turns · ${number(d.tool_calls)} tool calls · ${number(d.repeated_calls)} repeated identical calls. Tool loops and subagents add requests beyond your visible questions. Repeats may be legitimate polling.</p></div></div>`;
+  const turnDetail=state.sources
+    ? `<h3>${number(d.human_turns)} observed Claude user turns</h3><p>${number(d.tool_calls)} Claude tool calls · ${number(d.repeated_calls)} repeated identical calls. Codex user-turn and tool-payload attribution is unavailable; no mixed-harness per-turn ratio is calculated.</p>`
+    : `<h3>${per(s.requests,d.human_turns)} responses per user turn</h3><p>${number(d.human_turns)} observed main-session user turns · ${number(d.tool_calls)} tool calls · ${number(d.repeated_calls)} repeated identical calls. Tool loops and subagents add requests beyond your visible questions. Repeats may be legitimate polling.</p>`;
+  $("diagnosis").innerHTML=`<div class="diagnosis-grid"><div><h3>${per(input,s.requests)} input → ${per(s.tokens.output,s.requests)} output</h3><p>Average tokens per recorded response. Input includes instructions, prior conversation, tool definitions and results. The same context may be processed on many requests, even when the answer is short.</p></div><div><h3>${(share*100).toFixed(1)}% of input was cached</h3><p>${share>=.7 ? "Most input was reused from cache. That is a lower-priced read, not evidence of waste. A large conversation can still be replayed many times." : "Much of the input was newly processed or written to cache. New sessions, changing prefixes, compaction, or expiry can explain this; usage logs alone do not prove which."}</p></div><div>${turnDetail}</div></div>`;
+  if(state.sources) {
+    $("diagnosis").innerHTML+=`<p class="notice">${esc(state.evidence_scope)}</p>`;
+  }
   const max=Math.max(1,...d.tools.map(t=>t.bytes));
   $("tool-sources").innerHTML=`<h3>Which tools returned the most data?</h3><p class="small">${bytes(d.result_bytes)} observed serialized tool-result data · ${bytes(d.mcp_bytes)} from MCP · ${number(d.large_results)} results ≥ 20 kB. Bytes help find large sources; they are not token attribution or the full request context.</p>${d.tools.length ? `<div class="table-wrap"><table><thead><tr><th>Tool</th><th>Result size</th><th>Calls</th><th>Repeated</th></tr></thead><tbody>${d.tools.slice(0,8).map(t=>`<tr><td class="tool-name">${esc(t.name)}</td><td><span class="source-meter"><i style="width:${t.bytes/max*100}%"></i></span>${bytes(t.bytes)}</td><td>${number(t.calls)}</td><td>${number(t.repeated)}</td></tr>`).join("")}</tbody></table></div>` : '<p>No attributable tool results in these logs. A missing result is not a zero-size input.</p>'}<details><summary>What about MCP schemas and always-loaded instructions?</summary><p>These logs do not split input tokens by system prompt, memory, MCP schemas, or conversation. Run <code>/context</code> in Claude Code for its breakdown. Modern Claude Code defers MCP tool definitions when tool search is available; connecting a server does not prove all its schemas are resent.</p><p>Use <code>/mcp</code> to review unused servers. Check whether tool discovery is available in your provider configuration. Keep always-loaded memory concise; put specialist instructions in scoped rules or skills. TraceFrugal does not disable your servers or rewrite your memory.</p></details>`;
   const reasons={
@@ -79,6 +95,51 @@ function renderDiagnosis() {
   };
   const suggested=d.mcp_bytes>d.result_bytes/2?"mcp":d.large_results?"tool-results":d.repeated_calls?"turns":"";
   $("recipes").innerHTML=state.recipes.slice().sort((a,b)=>(b.id===suggested)-(a.id===suggested)).map(r=>`<div class="recipe">${r.id===suggested?'<span class="step">SUGGESTED FIRST · OBSERVED SIGNAL</span>':""}<h3>${esc(r.title)}</h3><p>${esc(reasons[r.id] || r.reason)}</p><button class="${r.id===suggested?"primary":"secondary"}" data-try="${esc(r.id)}" ${activeChange() || !s.requests ? "disabled" : ""}>Preview 24-hour trial →</button></div>`).join("");
+}
+function renderSources() {
+  $("sources-panel").hidden=!state.sources;
+  if(!state.sources) return;
+  $("sources").innerHTML=state.sources.map(s=>`<button class="source-card ${state.selected_source===s.id?'source-selected':''}" data-source="${esc(s.id)}" aria-pressed="${state.selected_source===s.id}"><span class="step">${s.harness==='codex'?'CODEX':'CLAUDE CODE'} · ${esc(s.name)}</span><b>${compact(tokens(s.summary.tokens))} tokens</b><span class="small">${number(s.summary.requests)} responses · ${esc(s.status)}</span></button>`).join("");
+  $("source-details").innerHTML=`<table><thead><tr><th>Store / last usage</th><th>Coverage</th><th>Controls</th></tr></thead><tbody>${state.sources.map(s=>`<tr><td>${esc(s.name)}<span class="sub">${s.latest?esc(date(s.latest)):'No recorded usage'}</span></td><td>${number(s.legacy_requests)} legacy estimates · ${number(s.unresolved_usage_events)} unresolved events · ${number(s.cross_source_duplicates)} shared copies excluded</td><td>${esc(s.activation)}</td></tr>`).join("")}</tbody></table>`;
+}
+function renderRecommendations() {
+  $("recommendations-panel").hidden=!state.recommendations;
+  if(!state.recommendations) return;
+  $("recommendations").innerHTML=state.recommendations.map((r,i)=>`<article class="recommendation"><span class="step">${String(i+1).padStart(2,"0")} · ${esc(r.confidence)}</span><h3>${esc(r.title)}</h3><p>${esc(r.evidence)}</p><p><strong>Try:</strong> ${esc(r.action)}</p><details><summary>How to tell if it helped</summary><p>${esc(r.verify)}</p></details></article>`).join("");
+  $("quality").innerHTML=`<strong>Answer quality: not measured by token counts.</strong><p>${compact(state.summary.reasoning_output)} recorded reasoning tokens are already included in output. They are not added again and do not score the quality of reasoning. Rate satisfaction in a scoped trial; use matched tasks and correctness checks before claiming savings.</p>`;
+}
+function renderPacking() {
+  const p=state.packing;
+  $("packing-panel").hidden=!p;
+  $("packing-history").innerHTML="";
+  if(!p)return;
+  $("change-count").textContent=state.changes.length+1;
+  if(!state.changes.length) $("changes-list").innerHTML="";
+  const stopped=p.status.startsWith("Stopped"), expired=p.status.startsWith("Expired");
+  const reduction=p.original_bytes ? 100*(1-(p.delivered_bytes+p.recall_bytes)/p.original_bytes) : null;
+  $("packing-panel").innerHTML=`<span class="step">MCP RESULT PACKING · SEPARATE PROXY TRIAL</span><h2>${p.packed?'Large results were archived. Check the effect.':'Waiting for the first eligible result.'}</h2><p><strong>${esc(p.status)}</strong> · ${number(p.packed)} transformations · ${number(p.recalls)} recalls</p><p>${esc(p.activation)}</p><p>Raw result payload: ${bytes(p.original_bytes)}. Excerpts: ${bytes(p.delivered_bytes)}. Recall traffic: ${bytes(p.recall_bytes)}. ${reduction===null?'No observed reduction.':Math.abs(reduction).toFixed(1)+'% '+(reduction>=0?'fewer':'more')+' result bytes including recall.'} This is not measured token or dollar savings.</p><button class="primary" data-view="changes">Review hourly graph &amp; answer satisfaction →</button>`;
+  const max=Math.max(1,...p.hours.map(h=>Math.max(h.original_bytes,h.delivered_bytes)));
+  const graph=p.hours.map((h,i)=>`<div class="hour-pair"><span>Hour ${i+1}</span><div><i class="original" style="width:${h.original_bytes/max*100}%"></i><i class="delivered" style="width:${h.delivered_bytes/max*100}%"></i></div><small>${h.packed||h.recalls?`${bytes(h.original_bytes)} → ${bytes(h.delivered_bytes)}`:'No receipts'}</small></div>`).join("");
+  const quality=p.before_rating&&p.after_rating ? p.after_rating<p.before_rating ? `Satisfaction fell from ${p.before_rating}/5 to ${p.after_rating}/5. Stop packing if omitted context is making answers less useful.` : `Satisfaction ${p.before_rating}/5 → ${p.after_rating}/5. Check matched tasks and correctness before keeping this approach.` : "Quality evidence is incomplete. Token counts cannot fill in your satisfaction rating.";
+  $("packing-history").innerHTML=`<article class="panel"><span class="step">ACTUAL PROXY RECEIPTS · NOT A SAVINGS CLAIM</span><h2>MCP packing: ${number(p.packed)} archived results</h2><p>${esc(p.status)}. Started ${esc(date(p.started))}; expires ${esc(date(p.expires))}. Scope: ${p.allow.map(esc).join(', ')} through this proxy only.</p><p>${esc(p.activation)}. Source filters above do not change this separate trial's scope.</p><div class="notice ${p.after_rating&&p.before_rating&&p.after_rating<p.before_rating?'error':''}">${esc(quality)}</div><h3>Result bytes, hour by hour</h3><p class="small"><span class="dot blue"></span> Original result bytes · <span class="dot green"></span> Excerpts + recalls. Missing receipts are not savings. Recall after expiry remains in the lifetime totals.</p><div class="hour-bars">${graph}</div><div class="rating-control"><label for="rating-pack">${p.packed?'After trying packing, rate the answers and reasoning':'Before your first packed result, rate your current answers'}</label><select id="rating-pack"><option value="">Choose 1–5</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${n===(p.packed?p.after_rating:p.before_rating)?'selected':''}>${n} / 5</option>`).join('')}</select><button class="secondary" data-pack-rate>Save satisfaction</button></div>${stopped||expired?'<p>Future results pass through. Archives and exact recall remain available.</p>':'<button class="secondary" data-pack-stop>Undo · stop future packing</button>'}<p class="small">Undo keeps the proxy, recall tool and history. It cannot remove excerpts already in a host conversation. This chart measures payload bytes only; use native usage and matched task outcomes separately.</p></article>`;
+}
+async function packingAction(action) {
+  if(busy||!state.packing)return;
+  const rating=Number($("rating-pack").value), before=!state.packing.packed;
+  if(action==="pack-rate" && !(rating>=1&&rating<=5)){notice("Choose a satisfaction rating from 1 to 5.",true);return;}
+  busy=true;
+  try {
+    if(demo){
+      if(action==="pack-stop")demoPack.status="Stopped · future results pass through";
+      else if(before)demoPack.before_rating=rating;else demoPack.after_rating=rating;
+      state.packing=demoPack;render();
+    } else {
+      const response=await fetch("api/"+action,{method:"POST",body:new URLSearchParams({token:boot.token,rating:String(rating),before:String(before)})});
+      if(!response.ok)throw new Error(await response.text());
+      await refresh();
+    }
+    notice(demo?"Sample only. No real proxy or settings changed.":action==="pack-stop"?"Packing stopped. Future results pass through; history and recall are preserved.":"Satisfaction saved to the trial history.");
+  } catch(error){notice(error.message,true);}finally{busy=false;}
 }
 function renderChart() {
   if (!state) return;
@@ -157,13 +218,14 @@ function comparisonGraph(before,after) {
 async function refresh() {
   const current = ++sequence;
   try {
-    const fresh = demo ? sample(days) : await (async()=>{
-      const response=await fetch("api/state?days="+days,{cache:"no-store"});
+    const fresh = demo ? (boot.mode==="native-demo" ? sampleNative(days,sourceID) : sample(days)) : await (async()=>{
+      const response=await fetch("api/state?days="+days+"&source="+encodeURIComponent(sourceID),{cache:"no-store"});
       if(!response.ok) throw new Error(await response.text());
       return response.json();
     })();
     if(current!==sequence) return;
-    if(demo && state) fresh.changes=state.changes;
+    if(demo && boot.mode==="native-demo") fresh.changes=demoTrials[sourceID] || [];
+    else if(demo && state) fresh.changes=state.changes;
     state=fresh;
     render();
   } catch(error) { notice("Could not refresh. "+error.message+" Any visible figures are from the previous read.",true); }
@@ -190,9 +252,10 @@ async function change(action, id = "", rating = 0) {
         const c=state.changes.find(c=>c.id===restoreID);
         if(c) { c.status="restored"; c.finished=new Date().toISOString(); }
       }
+      if(boot.mode==="native-demo") demoTrials[sourceID]=state.changes;
     } else {
       const body=new URLSearchParams({token:boot.token,recipe:recipeID,rating:String(rating),id:action==="restore"?restoreID:id});
-      const response=await fetch("api/"+action,{method:"POST",body});
+      const response=await fetch("api/"+action+"?source="+encodeURIComponent(sourceID),{method:"POST",body});
       if(!response.ok) throw new Error(await response.text());
       await refresh();
     }
@@ -201,6 +264,49 @@ async function change(action, id = "", rating = 0) {
     render();
   } catch(error) { notice(error.message,true); }
   finally { busy=false; $("apply-trial").disabled=$("restore-trial").disabled=false; }
+}
+function sampleNative(period, chosen) {
+  const r=sample(period);
+  const zero=()=>({requests:0,tokens:{input:0,cached_input:0,cache_write:0,cache_write_1h:0,output:0},known_usd:0,unpriced:0,reasoning_output:0});
+  const add=(s,q)=>{s.requests+=q.requests;s.known_usd+=q.known_usd;s.unpriced+=q.unpriced;s.reasoning_output+=q.reasoning_output||0;for(const k in s.tokens)s.tokens[k]+=q.tokens[k];};
+  const sources=[
+    {id:"sample-claude",name:".claude",harness:"claude",activation:"Advisory rules; loading and compliance unverified",tool_evidence:true},
+    {id:"sample-codex",name:".codex",harness:"codex",activation:"Usage only",tool_evidence:false},
+    {id:"sample-sandbox",name:".codex-sandbox",harness:"codex",activation:"Usage only",tool_evidence:false}
+  ].map(s=>({...s,summary:zero(),health:{},status:"Observed",latest:null,legacy_requests:0,unresolved_usage_events:0,cross_source_duplicates:0}));
+  r.sessions.forEach((session,i)=>{
+    const s=sources[i%sources.length]; session.source=s.id;
+    if(s.harness==="codex") {
+      session.unpriced=session.requests;session.known_usd=0;session.models=["example-codex-model"];
+      session.reasoning_output=Math.floor(session.tokens.output/3);
+      session.timeline.forEach(q=>{q.cost=null;q.model="example-codex-model";});
+    }
+    add(s.summary,session); if(!s.latest || session.end>s.latest)s.latest=session.end;
+  });
+  r.sessions=r.sessions.filter(s=>!chosen || s.source===chosen);
+  r.summary=zero();
+  r.buckets=r.buckets.map(b=>({...zero(),start:b.start}));
+  for(const s of r.sessions) {
+    add(r.summary,s);
+    const bucket=r.buckets.find(b=>b.start===s.start);if(bucket)add(bucket,s);
+  }
+  const hasClaude=!chosen || chosen==="sample-claude";
+  if(!hasClaude) r.diagnostics={human_turns:0,tool_calls:0,result_bytes:0,mcp_bytes:0,large_results:0,repeated_calls:0,tools:[]};
+  if(chosen!=="sample-claude")r.recipes=[];
+  r.mode="native";r.sources=sources;r.selected_source=chosen;
+  r.evidence_scope="Claude Code transcript tool events only. Codex tool payloads and actual MCP schema tokens are not attributed.";
+  r.recommendations=[
+    {id:"cache",title:"Keep useful cache reuse; reduce what gets repeated",confidence:"Sample cache ratio",evidence:"Cached input can dominate even when output is short. That alone does not prove waste.",action:"Keep stable instructions. Narrow large tool results before rewriting or clearing a useful session.",verify:"Track new input, writes and reads separately. Compare similar tasks and answer satisfaction."},
+    {id:"pack",title:"Archive large read-only tool results",confidence:"Sample payload sizes",evidence:"The sample tools return more data than the next step needs.",action:"Request selected fields and pages. An opt-in MCP proxy can archive full text and return an excerpt with a recall handle.",verify:"Check actual pack and recall receipts. Fewer payload bytes are not measured billed-token savings."},
+    {id:"mcp",title:"Load only the tools needed for the task",confidence:"Host capability required",evidence:"Usage counters do not identify how many input tokens came from MCP schemas.",action:"Use tool search or deferred discovery where supported; review task-specific profiles otherwise.",verify:"Inspect the host context breakdown before and after. Preserve tools needed for correctness."}
+  ];
+  if(!demoPack) {
+    const start=Date.now()-86400000;
+    const hours=Array.from({length:24},(_,i)=>({start:new Date(start+i*3600000).toISOString(),packed:i%3===0?2:0,recalls:i%6===0?1:0,original_bytes:i%3===0?80000:0,delivered_bytes:i%3===0?4000+(i%6===0?6000:0):0}));
+    demoPack={version:1,started:new Date(start).toISOString(),expires:new Date(start+86400000).toISOString(),allow:["search_docs"],status:"Expired · future results pass through",activation:"SYNTHETIC sample receipts, not observed savings",packed:16,recalls:4,original_bytes:640000,delivered_bytes:32000,recall_bytes:24000,before_rating:4,after_rating:0,hours,events:[]};
+  }
+  r.packing=demoPack;
+  return r;
 }
 function sample(period) {
   const now=Date.now(), n=period===1?24:period, step=period===1?3600000:86400000;
@@ -228,6 +334,10 @@ function sample(period) {
   ],diagnostics:{human_turns:Math.max(1,Math.round(summary.requests/5)),tool_calls:87,result_bytes:840000,mcp_bytes:720000,large_results:12,repeated_calls:9,tools:[{name:"mcp__docs__search",calls:24,bytes:720000,repeated:6},{name:"Read",calls:42,bytes:90000,repeated:1},{name:"Bash",calls:21,bytes:30000,repeated:2}]},price_label:"SYNTHETIC usage at example standard list rates",health:{files:n,duplicates:34,invalid:0,partial:0,unreadable:0,conflicts:0},findings:[{title:"Start with a session you recognize",detail:"Select website or api-service below to see individual requests. Toggle Tokens and Est. cost.",action:"In the local app these are your recorded sessions. The sample numbers here are illustrative, not measured savings."}]};
 }
 document.addEventListener("click", event => {
+  if(event.target.closest("[data-pack-stop]"))packingAction("pack-stop");
+  if(event.target.closest("[data-pack-rate]"))packingAction("pack-rate");
+  const source=event.target.closest("[data-source]");
+  if(source && !busy) { sourceID=source.dataset.source;selected="";state=undefined;refresh(); }
   const nav=event.target.closest("[data-view]"); if(nav) showView(nav.dataset.view);
   const range=event.target.closest("[data-days]"); if(range) { days=Number(range.dataset.days); selected=""; refresh(); }
   const choice=event.target.closest("[data-unit]"); if(choice) { unit=choice.dataset.unit; render(); }

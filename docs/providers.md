@@ -10,13 +10,16 @@ There are three separate pieces:
 
 TraceFrugal prices usage records. It does not connect to your account, inspect your installed apps, or infer your contract.
 
-## Claude Code: automatic local discovery
+## Claude Code and Codex: automatic local discovery
 
 Run `tracefrugal` with no arguments for the native local dashboard. It reads
 Claude Code JSONL usage, deduplicates repeated responses, and shows session and
 time-based graphs. Recognized public model IDs use dated list-price estimates;
 custom/cloud IDs can remain unpriced. Subscription bills are not inferred.
-See the [Claude Code guide](claude-code.md).
+Codex request receipts and labeled legacy snapshots are also imported; Codex
+costs remain unpriced. Source cards distinguish stores, coverage gaps and
+freshness. See [native source accounting](native-usage.md) and the
+[Claude Code guide](claude-code.md).
 
 ## Automatic normalization
 
@@ -54,7 +57,7 @@ Use an exact matching `your-provider/your-model` entry in the price book.
 - **OpenAI Chat Completions:** this is a different response schema from Responses; normalize it yourself for now.
 - **Local models / Ollama:** normalized usage works, but token-price estimates do not measure electricity, GPU rental, or hardware costs. Explicit zero rates mean zero estimated *token fees*, not zero infrastructure cost.
 - **Claude Code:** use `tracefrugal claude`, not the final-response normalizer.
-- **Codex:** no native importer yet. Do not rename cumulative totals as request usage.
+- **Codex:** use `tracefrugal watch`, not the final-response normalizer. Request receipts take precedence over cumulative snapshots. See the legacy coverage limits.
 
 ## What “shared across providers” does not mean
 

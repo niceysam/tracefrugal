@@ -12,10 +12,13 @@
 
 **Run `tracefrugal`. Your browser opens. Your own sessions appear.**
 
-TraceFrugal shows why your Claude Code workflow may process so much input:
+TraceFrugal brings **Claude Code and Codex stores into one local dashboard**
+and shows why your workflow may process so much input:
 large tool results, repeated calls, and context reused across responses.
 Try a small context rule for a day, compare tokens **and your answer satisfaction**,
-then keep it or undo it. You don't need recorder code or a different LLM.
+then keep it or undo it. An opt-in **MCP proxy actually archives large
+read-only results**, provides exact recall, and stops packing after 24 hours.
+You don't need a different LLM.
 
 **One Go binary. No runtime dependencies. No API key. No telemetry.**
 
@@ -23,9 +26,10 @@ then keep it or undo it. You don't need recorder code or a different LLM.
 
 **[Open the interactive dashboard](https://niceysam.github.io/tracefrugal/)** — no install, sign-up, or API key.
 
-1. See input vs. output, cache reuse, and the largest observed tool results.
-2. Preview an MCP, tool-result, or fewer-round-trips recommendation.
-3. Rate your current answers, simulate a 24-hour trial, then compare and undo.
+1. Choose **All sources**, Claude Code, or Codex; inspect input/cache/output.
+2. Read recommendations for context, MCP and round trips.
+3. Select a Claude source to preview a rule, or inspect the sample MCP
+   packing trial's hourly bytes and answer satisfaction.
 
 The public demo uses synthetic data. It does not connect to an AI account or generate actual savings.
 
@@ -43,11 +47,13 @@ On Windows, use `.\tracefrugal.exe`. The browser opens automatically.
 Choose `darwin_arm64` for Apple Silicon Macs, `darwin_amd64` for Intel Macs,
 or the corresponding Windows/Linux architecture. Keep the terminal running.
 
-TraceFrugal finds `~/.claude/projects` (or `CLAUDE_CONFIG_DIR`), removes repeated
-response blocks, and displays the last seven days. It refreshes every 30 seconds.
+TraceFrugal finds `~/.claude`, `~/.codex`, their `-*` sibling stores and
+`CLAUDE_CONFIG_DIR` / `CODEX_HOME`. It deduplicates copied responses and displays
+the last seven days. Source cards show missing, partial and unreadable data.
+It refreshes every 30 seconds.
 An optional trial adds one clearly previewed instruction file after confirmation.
 
-**[Two-step setup, supported sources, pricing limits, and rollback →](https://github.com/niceysam/tracefrugal/blob/main/docs/claude-code.md)**
+**[Setup, supported sources, accounting and coverage →](docs/native-usage.md)**
 
 No local logs yet? The app explains how to start. macOS may ask you to approve
 the downloaded binary in Privacy & Security; releases are not notarized.
@@ -57,12 +63,14 @@ the downloaded binary in Privacy & Security; releases are not notarized.
 | Your question | In TraceFrugal |
 |---|---|
 | Where did my usage go? | 24-hour, 7-day, and 30-day graphs; session sorting |
+| Are all my local workspaces counted? | Per-store coverage and freshness; shared receipts count once |
 | Is this conversation growing expensive? | Select the session; inspect request input, cache reads, and output |
 | Why is input huge when output is small? | Per-response input/output, cache explanation, tool-result byte sources, repeated calls |
 | What can I change about MCP or tools? | Three concrete, previewable context rules; no model or effort changes |
 | Did it help over a day? | Previous 24 hours vs. next 24 hours; hourly graph; input and cost per response; input and responses per user turn |
 | Were the answers still useful? | Your before/after answer and reasoning satisfaction, rated 1–5 |
 | Can I go back? | Remove the trial rule, with external-edit protection; history stays |
+| Can it really reduce tool results? | Opt-in read-only MCP result packing, exact recall, hourly receipts and stop |
 
 **Honest boundaries:** dollars are dated list-price estimates, not subscription
 bills. Unknown pricing stays visibly unpriced. A lower hourly total is not proof
@@ -73,6 +81,32 @@ in a fresh session. The rule stays active until removed. Native trials do not
 automatically grade answers or guarantee savings.
 
 [![A synthetic trial: lower input but lower satisfaction, with before/after graphs and undo](assets/context-trial.png)](https://niceysam.github.io/tracefrugal/)
+
+## Try actual MCP result packing
+
+Wrap one existing **stdio MCP server** with `tracefrugal pack`. Explicitly
+allowlist read-only tools. Large eligible text results are archived locally;
+the model gets an excerpt and an exact recall tool.
+
+```sh
+tracefrugal pack --state /path/to/private-trial --allow search_docs -- /path/to/mcp-server --stdio
+```
+
+Use the wrapper in your host's MCP configuration, then open its receipts:
+
+```sh
+tracefrugal watch --pack-state /path/to/private-trial
+```
+
+After 24 hours, future results pass through. **Undo** stops earlier and keeps
+history and recall. The graph includes recall traffic; fewer bytes are **not**
+measured billed-token savings. The proxy cannot unload host schemas or rewrite
+existing history. Full originals stay in the private archive.
+
+**[Exact setup, scope, retention and limitations →](docs/mcp-pack.md)** ·
+[What we learned from NVlabs SoL-Pi](docs/sol-pi-design.md)
+
+[![Synthetic MCP packing history with hourly original and delivered result bytes](assets/mcp-packing.png)](https://niceysam.github.io/tracefrugal/)
 
 ## For API application developers
 
@@ -91,7 +125,8 @@ Open **http://127.0.0.1:8765/** for token and task-cost charts, estimated spend,
 [Connection walkthrough and limitations →](docs/live-dashboard.md)
 
 This API workflow requires instrumentation. Claude Code uses the separate native
-importer above. Codex, ChatGPT and Claude Desktop do not have native importers.
+importer above; Codex also has a native local importer. ChatGPT and Claude
+Desktop are not natively imported.
 Usage totals alone cannot separate tool schemas from conversation history.
 
 ## Try, apply, or roll back an optimization
@@ -227,7 +262,7 @@ The report answers three questions: **What did we spend? Why did the gate fail? 
 | Any provider in TraceFrugal JSONL | Common accounting and reporting |
 | Gemini, Bedrock Converse, Ollama raw responses | Convert to the common format yourself |
 | Claude Code local session logs | `tracefrugal` or `tracefrugal claude`: automatic discovery, deduplication and graphs |
-| Codex native session logs | No native importer yet |
+| Codex native session logs | Automatic local discovery; request receipts and labeled legacy fallback; unpriced |
 
 **An agent app and a model provider are different things.** Using Claude Code does not mean its session log is an Anthropic Messages response. See [the compatibility guide](docs/providers.md).
 
@@ -305,7 +340,7 @@ TraceFrugal's narrow job is to apply the **same explicit cost and task-outcome c
 - Repeat stochastic tasks. A single pair of runs is not proof of a general improvement.
 - Missing outcomes are displayed as unknown by `report`; `compare` rejects them.
 - USD computations use IEEE 754 floating point. This tool is not a financial settlement system.
-- Native session-log import and built-in graders are not shipped features. Automatic experiments require your evaluator and profile integration.
+- Native log import covers Claude Code and Codex, with explicit format and coverage limits. Built-in quality graders are not shipped. API experiments require your evaluator and profile integration.
 
 Read [measurement methodology](docs/methodology.md) before publishing savings claims.
 

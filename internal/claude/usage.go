@@ -25,16 +25,20 @@ const maxLine = 16 * 1024 * 1024
 // Request contains usage metadata only. Prompts, tool results, and credentials
 // are discarded during decoding and never enter a snapshot.
 type Request struct {
-	ID       string        `json:"-"`
-	Session  string        `json:"session"`
-	Project  string        `json:"project"`
-	Model    string        `json:"model"`
-	Time     time.Time     `json:"time"`
-	Tokens   ledger.Tokens `json:"tokens"`
-	Cost     *float64      `json:"cost"`
-	Effort   string        `json:"effort,omitempty"`
-	Version  string        `json:"-"`
-	Subagent bool          `json:"subagent"`
+	ID         string        `json:"-"`
+	Session    string        `json:"session"`
+	Project    string        `json:"project"`
+	Model      string        `json:"model"`
+	Time       time.Time     `json:"time"`
+	Tokens     ledger.Tokens `json:"tokens"`
+	Cost       *float64      `json:"cost"`
+	Effort     string        `json:"effort,omitempty"`
+	Version    string        `json:"-"`
+	Subagent   bool          `json:"subagent"`
+	Source     string        `json:"source,omitempty"`
+	Harness    string        `json:"harness,omitempty"`
+	Reasoning  int64         `json:"reasoning_output,omitempty"` // Subset of Output, never added to it.
+	Accounting string        `json:"accounting,omitempty"`
 }
 
 type Health struct {
@@ -72,8 +76,14 @@ func (r *Reader) Read(root string) ([]Request, Health, error) {
 		r.files = make(map[string]cachedFile)
 	}
 	projects := filepath.Join(root, "projects")
-	if _, err := os.Stat(projects); errors.Is(err, os.ErrNotExist) {
+	info, statErr := os.Lstat(projects)
+	if errors.Is(statErr, os.ErrNotExist) {
+		r.files = make(map[string]cachedFile)
 		return []Request{}, Health{Missing: true}, nil
+	}
+	if statErr != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+		r.files = make(map[string]cachedFile)
+		return []Request{}, Health{Unreadable: 1}, nil
 	}
 	h := Health{}
 	present := map[string]bool{}

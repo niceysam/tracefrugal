@@ -17,7 +17,14 @@ var version = "dev"
 const help = `TraceFrugal — fewer tokens is not always a cheaper agent.
 
 Usage:
-  tracefrugal                         Open your local Claude Code dashboard
+  tracefrugal                         Open local Claude Code + Codex usage
+  tracefrugal watch [--days 7] [--no-open]
+  tracefrugal watch --claude-dir PATH --codex-dir PATH --json
+  tracefrugal watch --pack-state PATH   Show MCP packing receipts and hourly history
+  tracefrugal pack --state PATH --allow search,read -- UPSTREAM_COMMAND [ARGS...]
+  tracefrugal pack-status --state PATH
+  tracefrugal pack-stop --state PATH
+  tracefrugal pack-rate --state PATH --rating 4 [--before]
   tracefrugal claude [--no-open] [--days 7] [--port 8765]
   tracefrugal claude --json            Export observed Claude Code usage
   tracefrugal demo [--port 8765]
@@ -45,7 +52,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 2
 	}
 	if len(args) == 0 {
-		return claudeCommand(nil, stdout, stderr)
+		return nativeCommand(nil, stdout, stderr)
 	}
 	if args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
 		fmt.Fprint(stdout, help)
@@ -66,6 +73,12 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	if args[0] == "claude" {
 		return claudeCommand(args[1:], stdout, stderr)
+	}
+	if args[0] == "watch" {
+		return nativeCommand(args[1:], stdout, stderr)
+	}
+	if args[0] == "pack" || args[0] == "pack-status" || args[0] == "pack-stop" || args[0] == "pack-rate" {
+		return packCommand(args[0], args[1:], stdin, stdout, stderr)
 	}
 	if args[0] == "demo" {
 		return demo(args[1:], stdout, stderr)

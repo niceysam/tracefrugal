@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0
+
+* Native Claude Code + Codex source discovery, coverage, filtering and deduplication.
+* Request-level Codex accounting with labeled conservative legacy fallback.
+* Context recommendations and separate reasoning/quality visibility.
+* Opt-in read-only stdio MCP result archive/recall with bounded 24-hour trials.
+* Hourly payload receipts including recall traffic, satisfaction and stop controls.
+* Original Go archive/recall design informed by NVlabs SoL-Pi.
+
 ## 0.5.0
 
 - Open a native Claude Code dashboard by running `tracefrugal` without arguments.

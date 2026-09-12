@@ -8,10 +8,11 @@ import (
 )
 
 type Summary struct {
-	Requests int           `json:"requests"`
-	Tokens   ledger.Tokens `json:"tokens"`
-	KnownUSD float64       `json:"known_usd"`
-	Unpriced int           `json:"unpriced"`
+	Requests  int           `json:"requests"`
+	Tokens    ledger.Tokens `json:"tokens"`
+	KnownUSD  float64       `json:"known_usd"`
+	Unpriced  int           `json:"unpriced"`
+	Reasoning int64         `json:"reasoning_output"`
 }
 
 func (s *Summary) Add(q Request) {
@@ -21,6 +22,7 @@ func (s *Summary) Add(q Request) {
 	s.Tokens.CacheWrite += q.Tokens.CacheWrite
 	s.Tokens.CacheWrite1h += q.Tokens.CacheWrite1h
 	s.Tokens.Output += q.Tokens.Output
+	s.Reasoning += q.Reasoning
 	if q.Cost == nil {
 		s.Unpriced++
 	} else {

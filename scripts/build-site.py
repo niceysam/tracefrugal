@@ -11,7 +11,7 @@ for name in ("index.html", "claude.html", "claude.js", "claude.css", "dashboard.
     if name == "index.html":
         data = data.replace("{{.}}", '{"mode":"demo"}')
     if name == "claude.html":
-        data = data.replace("{{.}}", '{"mode":"claude-demo"}')
+        data = data.replace("{{.}}", '{"mode":"native-demo"}')
     destination = root / "site" / ("experiments.html" if name == "index.html" else "index.html" if name == "claude.html" else name)
     if args.check:
         if not destination.exists() or destination.read_text() != data:

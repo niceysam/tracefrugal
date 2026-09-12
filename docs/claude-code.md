@@ -1,5 +1,10 @@
 # Claude Code: from install to a useful first graph
 
+Running `tracefrugal` in v0.6 discovers Claude Code and Codex stores together.
+Select one Claude source to use the advisory rule workflow below.
+`tracefrugal claude` retains the original single-store interface and default
+history location. See [native discovery and accounting](native-usage.md).
+
 TraceFrugal reads the usage Claude Code already records on **your computer**.
 It does not need an API key, an SDK recorder, a model call, or a cloud account.
 

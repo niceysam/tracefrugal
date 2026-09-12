@@ -44,3 +44,5 @@ jobs:
         run: node scripts/test-dashboard.cjs
       - name: Check native Claude dashboard with Go import
         run: node scripts/test-claude-dashboard.cjs
+      - name: Check mixed-source and MCP packing dashboard
+        run: node scripts/test-native-dashboard.cjs

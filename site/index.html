@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>TraceFrugal — Understand and reduce your AI context</title>
-  <meta name="description" content="Understand large inputs, cache reuse, and MCP results in Claude Code. Try a context rule for 24 hours, compare tokens and answer satisfaction, and undo it. One local Go binary.">
+  <meta name="description" content="See Claude Code and Codex usage together. Explain large inputs, cache reuse and MCP results. Try smaller context, compare quality and undo. One local Go binary.">
   <meta name="theme-color" content="#f5f7fa">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="dashboard.css"><link rel="stylesheet" href="claude.css">
-  <script id="bootstrap" type="application/json">{"mode":"claude-demo"}</script>
+  <script id="bootstrap" type="application/json">{"mode":"native-demo"}</script>
   <script src="claude.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to dashboard</a>
 <header class="topbar"><a class="brand" href="./"><span class="logo" aria-hidden="true">t↘</span>TraceFrugal</a><div class="top-actions"><span id="source" class="pill">Loading local usage</span><a href="https://github.com/niceysam/tracefrugal" target="_blank" rel="noreferrer">GitHub ↗</a></div></header>
 <div class="layout">
-  <aside class="sidebar"><p class="nav-label">CLAUDE CODE</p><nav aria-label="Dashboard">
+  <aside class="sidebar"><p class="nav-label">CLAUDE CODE + CODEX</p><nav aria-label="Dashboard">
     <button data-view="overview" aria-current="page">◫ Overview</button>
     <button data-view="changes">↺ Changes &amp; results <span id="change-count" class="count">0</span></button>
     <button data-view="setup">＋ Get started</button>
@@ -24,7 +24,8 @@
     <div id="demo-banner" class="demo-banner" hidden><span><strong>Sample data</strong> · Explore the app before installing. These are not your costs.</span><button class="text-button" data-view="setup">Show my real usage →</button></div>
     <section id="overview" class="view">
       <div class="page-heading"><div><p class="eyebrow">UNDERSTAND → TRY → COMPARE → KEEP OR UNDO</p><h1>Smaller context. Still useful answers.</h1><p id="freshness">Reading usage from this computer…</p></div><div class="range" role="group" aria-label="Time range"><button data-days="1">24 hours</button><button data-days="7" aria-pressed="true">7 days</button><button data-days="30">30 days</button></div></div>
-      <div id="empty" class="panel onboarding" hidden><h2>No Claude Code usage found yet.</h2><p>Use Claude Code on this computer, then leave this dashboard open. Recorded usage appears automatically. If your sessions live elsewhere, point TraceFrugal at that Claude config directory.</p><pre>tracefrugal claude --dir /path/to/claude-config</pre><p>Cloud sessions, Claude Desktop, and ChatGPT conversations are not imported.</p><button class="primary" data-view="setup">Show setup steps</button></div>
+      <article id="sources-panel" class="panel" hidden><div class="panel-heading"><div><span class="step">YOUR LOCAL SOURCES</span><h2>Choose a workspace, or see them together.</h2></div><button class="secondary" data-source="">All sources</button></div><div id="sources" class="source-grid"></div><details><summary>Data coverage &amp; available controls</summary><div id="source-details" class="table-wrap"></div><p class="small">These are log stores, not accounts. Shared launchers count once. Custom folders outside your home need an explicit path. Missing data is not zero usage. Unresolved-event counts cover all retained logs; response and legacy counts use the selected period.</p></details></article>
+      <div id="empty" class="panel onboarding" hidden><h2>No recorded usage in this view.</h2><p>Check the source status above, expand the time range, or point the app at your custom log directories. Use Claude Code or Codex and keep this dashboard open.</p><pre>tracefrugal watch --claude-dir /path/to/claude --codex-dir /path/to/codex</pre><p>Cloud sessions, Claude Desktop, and ChatGPT conversations are not imported.</p><button class="primary" data-view="setup">Show setup steps</button></div>
       <div id="metrics" class="metrics"></div>
       <article class="panel usage-chart">
         <div class="panel-heading"><div><h2 id="chart-title">Usage over time</h2><p id="chart-caption">Recorded input, cache, and output tokens.</p></div><div class="range" role="group" aria-label="Chart units"><button data-unit="tokens" aria-pressed="true">Tokens</button><button data-unit="cost">Est. cost</button></div></div>
@@ -32,6 +33,8 @@
         <details class="chart-data"><summary>Read chart values</summary><div id="chart-values" class="table-wrap"></div></details>
       </article>
       <article class="panel diagnosis"><span class="step">01 · UNDERSTAND THE INPUT</span><h2>Why so much input, and so little output?</h2><div id="diagnosis"></div><div id="tool-sources"></div></article>
+      <article id="recommendations-panel" class="panel" hidden><span class="step">WHAT TO CHANGE · AND HOW TO CHECK IT</span><h2>Fix the context before changing the model.</h2><div id="recommendations" class="recommendation-grid"></div><div id="quality" class="notice"></div></article>
+      <article id="packing-panel" class="panel" hidden></article>
       <div class="insight-grid">
         <article id="trial-card" class="panel"></article>
         <article class="panel"><span class="step">CHECK THE EVIDENCE</span><div id="findings"></div></article>
@@ -45,14 +48,15 @@
       <div class="page-heading"><div><p class="eyebrow">03 · COMPARE TOKENS AND SATISFACTION</p><h1>Did smaller context help?</h1><p>The previous 24 hours vs. up to 24 hours after a change. Hourly observations and your ratings stay on this computer.</p></div></div>
       <div class="notice">Different workloads can change the numbers. Per-response and per-user-turn comparisons help, but do not match task difficulty. Satisfaction is your assessment of the answers and reasoning; it is not an automated quality test.</div>
       <div id="changes-list"></div>
+      <div id="packing-history"></div>
     </section>
     <section id="setup" class="view" hidden>
-      <div class="page-heading"><div><p class="eyebrow">GET STARTED</p><h1>Your own data, in two steps.</h1><p>For people who use Claude Code on a Mac, Windows PC, or Linux computer.</p></div></div>
+      <div class="page-heading"><div><p class="eyebrow">GET STARTED</p><h1>Your own data, in two steps.</h1><p>For people who use Claude Code or Codex on a Mac, Windows PC, or Linux computer.</p></div></div>
       <div class="connect-grid">
         <article class="panel"><span class="step">01 · DOWNLOAD</span><h2>Get the app for your computer.</h2><p>Download and extract the archive for your operating system. No Go, Python, API key, or sign-up is needed.</p><a id="download" class="primary link-button" href="https://github.com/niceysam/tracefrugal/releases/latest" target="_blank" rel="noreferrer">Download TraceFrugal ↗</a><p class="small">macOS: arm64 for Apple Silicon, amd64 for Intel.<br>Windows: amd64 for most PCs, arm64 for ARM PCs.<br>Linux: choose the matching processor architecture.</p></article>
-        <article class="panel"><span class="step">02 · OPEN</span><h2>Run one command.</h2><p>In a terminal opened in the extracted folder:</p><pre id="launch-command">./tracefrugal</pre><button id="copy-command" class="secondary">Copy command</button><p>The app opens your browser, finds local Claude Code logs, and refreshes automatically. Keep its terminal running.</p><p class="small">If a browser does not open, use the printed local URL. On macOS, if the downloaded app is blocked, review it in Privacy &amp; Security and choose Open Anyway only if you trust the download. The release is not notarized.</p></article>
+        <article class="panel"><span class="step">02 · OPEN</span><h2>Run one command.</h2><p>In a terminal opened in the extracted folder:</p><pre id="launch-command">./tracefrugal</pre><button id="copy-command" class="secondary">Copy command</button><p>The app opens your browser, finds local Claude Code and Codex stores, and refreshes automatically. Keep its terminal running.</p><p class="small">If a browser does not open, use the printed local URL. On macOS, if the downloaded app is blocked, review it in Privacy &amp; Security and choose Open Anyway only if you trust the download. The release is not notarized.</p></article>
       </div>
-      <article class="panel connect-footer"><h2>What connects automatically?</h2><div class="table-wrap"><table><thead><tr><th>Source</th><th>How it works</th></tr></thead><tbody><tr><td>Claude Code on this computer</td><td>Automatic local JSONL discovery. Main sessions and recorded subagents.</td></tr><tr><td>Claude Code with Bedrock or another provider</td><td>Tokens when recorded in the same format. Provider-specific model IDs may remain unpriced.</td></tr><tr><td>OpenAI / Anthropic API applications</td><td>Available through the <a href="https://github.com/niceysam/tracefrugal/blob/main/docs/live-dashboard.md">API recorder and evaluator</a>. Requires integration.</td></tr><tr><td>ChatGPT, Codex, Claude Desktop, web conversations</td><td>No native import in this release.</td></tr></tbody></table></div><p>Prices are token-based estimates, not a subscription bill or a plan-limit meter. Your provider's billing page remains authoritative.</p><a href="https://github.com/niceysam/tracefrugal/blob/main/docs/claude-code.md">Detailed setup, privacy, pricing, and rollback →</a></article>
+      <article class="panel connect-footer"><h2>What connects automatically?</h2><div class="table-wrap"><table><thead><tr><th>Source</th><th>How it works</th></tr></thead><tbody><tr><td>Claude Code</td><td>Local JSONL discovery in ~/.claude and ~/.claude-*; also CLAUDE_CONFIG_DIR. Main sessions and recorded subagents.</td></tr><tr><td>Codex</td><td>Local sessions and archived_sessions in ~/.codex and ~/.codex-*; also CODEX_HOME. Request receipts preferred; older snapshots have explicit coverage limits. Native Codex costs remain unpriced.</td></tr><tr><td>Claude Code with Bedrock or another provider</td><td>Tokens when recorded in the same format. Provider-specific model IDs may remain unpriced.</td></tr><tr><td>OpenAI / Anthropic API applications</td><td>Available through the <a href="https://github.com/niceysam/tracefrugal/blob/main/docs/live-dashboard.md">API recorder and evaluator</a>. Requires integration.</td></tr><tr><td>ChatGPT, Claude Desktop, web conversations</td><td>No native import.</td></tr></tbody></table></div><p>Prices are token-based estimates, not a subscription bill or a plan-limit meter. Your provider's billing page remains authoritative.</p><a href="https://github.com/niceysam/tracefrugal/blob/main/docs/native-usage.md">Coverage, accounting, privacy and custom sources →</a></article>
     </section>
   </main>
 </div>
