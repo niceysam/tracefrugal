@@ -222,7 +222,9 @@ func TestWrongEffectiveValueAndWrongProjectDoNotActivate(t *testing.T) {
 	if err != nil || !strings.Contains(report.Trials[0].Assessment, "Waiting for a Claude SessionStart") {
 		t.Fatal("wrong effective value treated as active", err)
 	}
-	event = strings.ReplaceAll(event, c.Project, filepath.Dir(c.Project))
+	// Build valid JSON for the other project. Raw Windows path replacement
+	// cannot match the backslashes already escaped by %q.
+	event = fmt.Sprintf(`{"session_id":"wrong-project","cwd":%q,"hook_event_name":"SessionStart","source":"startup"}`, filepath.Dir(c.Project))
 	if Record(c.State, x.ID, strings.NewReader(event), Limit, now) == nil {
 		t.Fatal("wrong project accepted")
 	}
